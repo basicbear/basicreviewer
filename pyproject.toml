@@ -1,0 +1,15 @@
+[project]
+name = "crev"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "basic bear", email = "basic.bear@outlook.com" }]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+crev = "crev:main"
+
+[build-system]
+requires = ["uv_build>=0.9.24,<0.10.0"]
+build-backend = "uv_build"
