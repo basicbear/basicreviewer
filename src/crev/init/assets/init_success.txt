@@ -1,0 +1,7 @@
+Created repos.json in {project_path}
+
+Project initialized successfully!
+
+Next steps:
+  1. Edit {repos_file} to add your repositories and pull requests
+  2. Run 'crev pull' to fetch repositories and pull requests

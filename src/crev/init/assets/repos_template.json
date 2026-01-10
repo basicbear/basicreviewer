@@ -1,0 +1,16 @@
+{
+  "repos": [
+    {
+      "name": "example-repo",
+      "url": "https://github.com/user/example-repo.git",
+      "pull_requests": [
+        {
+          "url": "https://github.com/user/example-repo/pull/123"
+        },
+        {
+          "url": "https://github.com/user/example-repo/pull/124"
+        }
+      ]
+    }
+  ]
+}
