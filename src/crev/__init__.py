@@ -1,6 +1,7 @@
 import click
 
 from crev.init import init
+from crev.pull import pull
 
 
 @click.group()
@@ -12,3 +13,4 @@ def main() -> None:
 
 # Register subcommands
 main.add_command(init)
+main.add_command(pull)

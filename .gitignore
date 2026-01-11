@@ -1,5 +1,6 @@
 .env
-private/
+repos/
+.idea
 
 ## UV DEFAULT
 # Python-generated files

@@ -1,7 +1,12 @@
 # basicreviewer
 Open source code review, performance review, and CV tool. Designed to help software engineers market themselves and improve their skills.
 
+
+
 # Use
+## Pre-Requisites
+- git CLI
+- gh CLI
 ## Install
 ```bash
 uv tool install . -e
@@ -14,9 +19,9 @@ uv tool remove crev
 
 # Development
 ## Testing
-- Run all tests: `uv run --with pytest pytest tests/ -v`
-- Run just init tests: `uv run --with pytest pytest tests/init/test_base.py -v`
-
+- Run all tests: `uv run pytest -v`
+- Run just init tests: `uv run pytest ./tests/init -v`
+- pull tests: `uv run pytest ./tests/pull -v`
 
 
 # Shout outs
