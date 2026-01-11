@@ -50,12 +50,27 @@ def getPullRequest(repo: dict, repos_dir: Path) -> None:
         click.echo(f"Skipping PRs for {name} (repo not found)", err=True)
         return
 
+    # Get list of existing branches
+    result = subprocess.run(
+        ["git", "branch", "--list"],
+        cwd=repo_path,
+        capture_output=True,
+        text=True,
+    )
+    existing_branches = {
+        branch.strip().lstrip("* ") for branch in result.stdout.splitlines()
+    }
+
     for pr_number in pull_requests:
         if not isinstance(pr_number, int):
             click.echo(f"Skipping invalid PR number in {name}: {pr_number}", err=True)
             continue
 
         local_branch = f"crev-pr-{pr_number}"
+
+        if local_branch in existing_branches:
+            click.echo(f"Branch {local_branch} already exists for {name}, skipping...")
+            continue
 
         click.echo(f"Fetching PR #{pr_number} for {name} into {local_branch}...")
         try:

@@ -39,7 +39,7 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
                 {
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": []
+                    "pull_requests": [],
                 }
             ]
         }
@@ -72,7 +72,7 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
                 {
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": []
+                    "pull_requests": [],
                 }
             ]
         }
@@ -107,7 +107,7 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
                 {
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [123, 456]
+                    "pull_requests": [123, 456],
                 }
             ]
         }
@@ -131,8 +131,18 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
         # Check PR fetch calls
         pr_calls = [c for c in mock_run.call_args_list if "fetch" in c[0][0]]
         assert len(pr_calls) == 2
-        assert pr_calls[0][0][0] == ["git", "fetch", "origin", "pull/123/head:crev-pr-123"]
-        assert pr_calls[1][0][0] == ["git", "fetch", "origin", "pull/456/head:crev-pr-456"]
+        assert pr_calls[0][0][0] == [
+            "git",
+            "fetch",
+            "origin",
+            "pull/123/head:crev-pr-123",
+        ]
+        assert pr_calls[1][0][0] == [
+            "git",
+            "fetch",
+            "origin",
+            "pull/456/head:crev-pr-456",
+        ]
 
 
 @patch("subprocess.run")
@@ -147,13 +157,13 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
                 {
                     "name": "repo1",
                     "url": "https://github.com/user/repo1.git",
-                    "pull_requests": []
+                    "pull_requests": [],
                 },
                 {
                     "name": "repo2",
                     "url": "https://github.com/user/repo2.git",
-                    "pull_requests": [789]
-                }
+                    "pull_requests": [789],
+                },
             ]
         }
         with open("repos.json", "w") as f:
@@ -171,3 +181,71 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
 
         # Verify git commands: 1 clone (repo1) + 1 pull (repo2) + 1 fetch PR
         assert mock_run.call_count == 3
+
+
+@patch("subprocess.run")
+def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
+    """Test that pull skips fetching PRs when their branches already exist."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Create repos.json with PRs
+        repos_data = {
+            "repos": [
+                {
+                    "name": "test-repo",
+                    "url": "https://github.com/user/test-repo.git",
+                    "pull_requests": [123, 456],
+                }
+            ]
+        }
+        with open("repos.json", "w") as f:
+            json.dump(repos_data, f)
+
+        # Create existing repo directory
+        Path("repos/test-repo").mkdir(parents=True)
+
+        # Mock subprocess.run to simulate branch check and git pull
+        def mock_subprocess_run(cmd, **kwargs):
+            # Mock git branch --list to return existing branch crev-pr-123
+            if cmd == ["git", "branch", "--list"]:
+                from unittest.mock import Mock
+
+                result = Mock()
+                result.stdout = "  crev-pr-123\n  main\n* master\n"
+                return result
+            # Mock git pull
+            if cmd == ["git", "pull"]:
+                return Mock()
+            # Mock git fetch (should only be called for PR #456, not #123)
+            if "fetch" in cmd:
+                return Mock()
+            return Mock()
+
+        mock_run.side_effect = mock_subprocess_run
+
+        result = runner.invoke(main, ["pull"])
+
+        assert result.exit_code == 0
+        assert "Pulling updates for test-repo..." in result.output
+        assert (
+            "Branch crev-pr-123 already exists for test-repo, skipping..."
+            in result.output
+        )
+        assert "Fetching PR #456 for test-repo into crev-pr-456..." in result.output
+        assert "Done." in result.output
+
+        # Verify git commands: 1 pull + 1 branch check + 1 fetch (only for PR #456)
+        assert mock_run.call_count == 3
+
+        # Verify that fetch was only called for PR #456, not #123
+        fetch_calls = [
+            c for c in mock_run.call_args_list if len(c[0]) > 0 and "fetch" in c[0][0]
+        ]
+        assert len(fetch_calls) == 1
+        assert fetch_calls[0][0][0] == [
+            "git",
+            "fetch",
+            "origin",
+            "pull/456/head:crev-pr-456",
+        ]
