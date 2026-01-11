@@ -53,8 +53,7 @@ def test_init_creates_repos_json(tmp_path):
 
     # Check pull request structure
     assert len(first_repo["pull_requests"]) == 2
-    assert "url" in first_repo["pull_requests"][0]
-    assert "url" in first_repo["pull_requests"][1]
+    assert first_repo["pull_requests"] == [123, 124]
 
 
 def test_init_fails_on_existing_directory(tmp_path):
