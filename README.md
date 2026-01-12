@@ -23,6 +23,9 @@ uv tool remove crev
 - Run just init tests: `uv run pytest ./tests/init -v`
 - pull tests: `uv run pytest ./tests/pull -v`
 
+#### Unreviewed Tests
+- cmd: pull - all except base
+- cmd: extract - all
 
 # Shout outs
 - To all the people working hard to make the world a better place!

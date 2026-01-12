@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
 
@@ -88,11 +88,13 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
         assert "Pulling updates for test-repo..." in result.output
         assert "Done." in result.output
 
-        # Verify git pull was called
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args[0][0]
-        assert call_args == ["git", "pull"]
-        assert mock_run.call_args[1]["cwd"] == Path("repos/test-repo")
+        # Verify git commands were called: 1 pull + 1 branch check
+        assert mock_run.call_count == 2
+        # First call should be git pull
+        assert mock_run.call_args_list[0][0][0] == ["git", "pull"]
+        assert mock_run.call_args_list[0][1]["cwd"] == Path("repos/test-repo")
+        # Second call should be git branch --list
+        assert mock_run.call_args_list[1][0][0] == ["git", "branch", "--list"]
 
 
 @patch("subprocess.run")
@@ -125,8 +127,8 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
         assert "Fetching PR #456 for test-repo into crev-pr-456..." in result.output
         assert "Done." in result.output
 
-        # Verify git commands were called
-        assert mock_run.call_count == 3  # 1 pull + 2 fetch PRs
+        # Verify git commands were called: 1 pull + 1 branch check + 2 fetch PRs
+        assert mock_run.call_count == 4
 
         # Check PR fetch calls
         pr_calls = [c for c in mock_run.call_args_list if "fetch" in c[0][0]]
@@ -179,8 +181,8 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
         assert "Pulling updates for repo2..." in result.output
         assert "Fetching PR #789 for repo2 into crev-pr-789..." in result.output
 
-        # Verify git commands: 1 clone (repo1) + 1 pull (repo2) + 1 fetch PR
-        assert mock_run.call_count == 3
+        # Verify git commands: 1 clone (repo1) + 1 pull (repo2) + 1 branch check + 1 fetch PR
+        assert mock_run.call_count == 4
 
 
 @patch("subprocess.run")
@@ -207,20 +209,18 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
 
         # Mock subprocess.run to simulate branch check and git pull
         def mock_subprocess_run(cmd, **kwargs):
+            result = Mock()
             # Mock git branch --list to return existing branch crev-pr-123
             if cmd == ["git", "branch", "--list"]:
-                from unittest.mock import Mock
-
-                result = Mock()
                 result.stdout = "  crev-pr-123\n  main\n* master\n"
                 return result
             # Mock git pull
             if cmd == ["git", "pull"]:
-                return Mock()
+                return result
             # Mock git fetch (should only be called for PR #456, not #123)
             if "fetch" in cmd:
-                return Mock()
-            return Mock()
+                return result
+            return result
 
         mock_run.side_effect = mock_subprocess_run
 
