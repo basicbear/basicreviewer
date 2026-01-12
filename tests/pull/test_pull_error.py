@@ -97,10 +97,22 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
         Path("repos/test-repo").mkdir(parents=True)
 
         # Simulate PR fetch failure
-        mock_run.side_effect = [
-            None,  # git pull succeeds
-            subprocess.CalledProcessError(1, ["git", "fetch"])  # git fetch fails
-        ]
+        def mock_subprocess_run(cmd, **kwargs):
+            from unittest.mock import Mock
+            result = Mock()
+            # Mock git pull
+            if cmd == ["git", "pull"]:
+                return result
+            # Mock git branch --list
+            if cmd == ["git", "branch", "--list"]:
+                result.stdout = ""
+                return result
+            # Mock git fetch to fail
+            if "fetch" in cmd:
+                raise subprocess.CalledProcessError(1, ["git", "fetch"])
+            return result
+
+        mock_run.side_effect = mock_subprocess_run
 
         result = runner.invoke(main, ["pull"])
 
@@ -138,5 +150,5 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
         assert "Fetching PR #456" in result.output
         assert "Skipping invalid PR number" in result.output
 
-        # Verify only valid PRs were fetched: 1 pull + 2 fetch (123, 456)
-        assert mock_run.call_count == 3
+        # Verify only valid PRs were fetched: 1 pull + 1 branch check + 2 fetch (123, 456)
+        assert mock_run.call_count == 4
