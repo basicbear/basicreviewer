@@ -85,14 +85,14 @@ def getPullRequest(repo: dict, repos_dir: Path) -> None:
 
 @click.command()
 def pull() -> None:
-    """Pull all repos defined in repos.json into a repos folder."""
-    repos_file = Path("repos.json")
+    """Pull all repos defined in configs.json into a repos folder."""
+    configs_file = Path("configs.json")
 
-    if not repos_file.exists():
-        click.echo("Error: repos.json not found. Run 'crev init' first.", err=True)
+    if not configs_file.exists():
+        click.echo("Error: configs.json not found. Run 'crev init' first.", err=True)
         raise SystemExit(1)
 
-    with open(repos_file) as f:
+    with open(configs_file) as f:
         data = json.load(f)
 
     repos_dir = Path("repos")

@@ -11,13 +11,13 @@ from .extract_pr import extract_pr_files
 @click.command()
 def extract() -> None:
     """Extract PR files and diffs from pulled repositories."""
-    repos_file = Path("repos.json")
+    configs_file = Path("configs.json")
 
-    if not repos_file.exists():
-        click.echo("Error: repos.json not found. Run 'crev init' first.", err=True)
+    if not configs_file.exists():
+        click.echo("Error: configs.json not found. Run 'crev init' first.", err=True)
         raise SystemExit(1)
 
-    with open(repos_file) as f:
+    with open(configs_file) as f:
         data = json.load(f)
 
     repos_dir = Path("repos")
