@@ -1,0 +1,16 @@
+{
+  "llm": {
+    "provider": "claude",
+    "model": "claude-3-5-sonnet-20241022"
+  },
+  "repos": [
+    {
+      "name": "example-repo",
+      "url": "https://github.com/user/example-repo.git",
+      "pull_requests": [
+        123,
+        124
+      ]
+    }
+  ]
+}
