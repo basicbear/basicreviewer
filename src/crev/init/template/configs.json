@@ -14,5 +14,9 @@
         124
       ]
     }
-  ]
+  ],
+  "prompts": {
+    "review": "prompts/review.txt",
+    "summary": "prompts/summary.txt"
+  }
 }

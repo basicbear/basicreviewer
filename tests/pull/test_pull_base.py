@@ -14,9 +14,9 @@ def test_pull_creates_repos_directory(tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create minimal repos.json
+        # Create minimal configs.json
         repos_data = {"repos": []}
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         with patch("subprocess.run"):
@@ -33,7 +33,7 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with one repo
+        # Create configs.json with one repo
         repos_data = {
             "repos": [
                 {
@@ -43,7 +43,7 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         result = runner.invoke(main, ["pull"])
@@ -66,7 +66,7 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json
+        # Create configs.json
         repos_data = {
             "repos": [
                 {
@@ -76,7 +76,7 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory
@@ -103,7 +103,7 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with PRs
+        # Create configs.json with PRs
         repos_data = {
             "repos": [
                 {
@@ -113,7 +113,7 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory
@@ -153,7 +153,7 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with multiple repos
+        # Create configs.json with multiple repos
         repos_data = {
             "repos": [
                 {
@@ -168,7 +168,7 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
                 },
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory for repo2
@@ -191,7 +191,7 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with PRs
+        # Create configs.json with PRs
         repos_data = {
             "repos": [
                 {
@@ -201,7 +201,7 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory

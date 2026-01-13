@@ -13,9 +13,9 @@ def test_pull_handles_empty_repos_list(tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with empty repos list
+        # Create configs.json with empty repos list
         repos_data = {"repos": []}
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         with patch("subprocess.run"):
@@ -26,13 +26,13 @@ def test_pull_handles_empty_repos_list(tmp_path):
 
 
 def test_pull_handles_missing_repos_key(tmp_path):
-    """Test that pull handles repos.json without a 'repos' key."""
+    """Test that pull handles configs.json without a 'repos' key."""
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json without repos key
+        # Create configs.json without repos key
         repos_data = {}
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         with patch("subprocess.run"):
