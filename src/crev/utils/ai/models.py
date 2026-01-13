@@ -12,15 +12,15 @@ load_dotenv()
 
 
 def get_claude_model(
-    model: str = "claude-3-5-sonnet-20241022",
+    model: str = None,
     temperature: float = 0.0,
-    max_tokens: int = 4096,
+    max_tokens: int = 8192,
     api_key: Optional[str] = None,
 ) -> BaseChatModel:
     """Get a Claude model instance from Anthropic.
 
     Args:
-        model: Model identifier (default: claude-3-5-sonnet-20241022)
+        model: Model identifier
         temperature: Sampling temperature (0.0 = deterministic, 1.0 = creative)
         max_tokens: Maximum tokens to generate
         api_key: Anthropic API key (if None, reads from ANTHROPIC_API_KEY env var)

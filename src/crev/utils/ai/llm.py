@@ -6,6 +6,7 @@ from typing import Optional
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
+
 from .models import get_claude_model
 
 
@@ -41,6 +42,8 @@ def load_llm_config() -> dict:
 def get_llm_client(
     provider: Optional[str] = None,
     model: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
     **kwargs,
 ) -> BaseChatModel:
     """Get an LLM client based on configuration.
@@ -48,7 +51,9 @@ def get_llm_client(
     Args:
         provider: LLM provider (e.g., 'claude', 'openai'). If None, reads from configs.json
         model: Model identifier. If None, reads from configs.json
-        **kwargs: Additional parameters to pass to the model (e.g., temperature, max_tokens)
+        temperature: Sampling temperature (0.0-1.0). If None, reads from configs.json
+        max_tokens: Maximum tokens to generate. If None, reads from configs.json
+        **kwargs: Additional parameters to pass to the model
 
     Returns:
         Configured LLM client instance
@@ -57,15 +62,25 @@ def get_llm_client(
         ValueError: If provider is not supported
         FileNotFoundError: If configs.json is not found
     """
-    # Load config if provider/model not specified
-    if provider is None or model is None:
-        config = load_llm_config()
-        provider = provider or config.get("provider", "claude")
-        model = model or config.get("model", "claude-3-5-sonnet-20241022")
+    # Load config to get any unspecified parameters
+    config = load_llm_config()
+
+    # Use provided values or fall back to config, then to defaults
+    provider = provider or config.get("provider", "claude")
+    model = model or config.get("model", "claude-sonnet-4-5-20250929")
+    temperature = temperature if temperature is not None else config.get("temperature")
+    max_tokens = max_tokens if max_tokens is not None else config.get("max_tokens")
+
+    # Build model kwargs, only including non-None values
+    model_kwargs = {**kwargs}
+    if temperature is not None:
+        model_kwargs["temperature"] = temperature
+    if max_tokens is not None:
+        model_kwargs["max_tokens"] = max_tokens
 
     # Get the appropriate model based on provider
     if provider.lower() == "claude":
-        return get_claude_model(model=model, **kwargs)
+        return get_claude_model(model=model, **model_kwargs)
     else:
         raise ValueError(
             f"Unsupported LLM provider: {provider}. Currently supported: claude"
