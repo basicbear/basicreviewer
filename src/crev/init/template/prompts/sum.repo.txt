@@ -1,0 +1,37 @@
+# Repository Analysis Prompt
+
+You are analyzing a software repository. Based on the provided repository structure, files, and code, please provide a comprehensive summary.
+
+## Analysis Requirements
+
+Please analyze and document the following aspects:
+
+### 1. Business Purpose
+- What problem does this repository solve?
+- What is its primary function or goal?
+- Who are the intended users or beneficiaries?
+
+### 2. Tech Stack
+- Programming languages used
+- Frameworks and libraries
+- Build tools and package managers
+- Testing frameworks
+- Key dependencies and their purposes
+
+### 3. Architecture
+- Overall code organization structure
+- Architectural patterns (e.g., MVC, microservices, layered architecture)
+- Main components and modules
+- How components interact with each other
+- Data flow and control flow
+
+### 4. Design Philosophy
+- Design principles evident in the codebase (e.g., SOLID, DRY, KISS)
+- Separation of concerns
+- Modularity and reusability
+- Code organization patterns
+- Notable design patterns (e.g., factory, singleton, strategy)
+
+## Output Format
+
+Please provide a clear, well-structured markdown summary that would help a new developer understand the repository at a high level. Use headers, bullet points, and code examples where appropriate.

@@ -16,7 +16,7 @@
     }
   ],
   "prompts": {
-    "review": "prompts/review.txt",
-    "summary": "prompts/summary.txt"
+    "sum_repo": "prompts/sum.repo.txt",
+    "sum_pr": "prompts/sum.pr.txt"
   }
 }

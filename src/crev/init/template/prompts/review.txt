@@ -1,3 +1,0 @@
-# Code Review Prompt
-
-Review the following code changes and provide feedback.

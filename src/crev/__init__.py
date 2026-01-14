@@ -3,6 +3,7 @@ import click
 from crev.extract import extract
 from crev.init import init
 from crev.pull import pull
+from crev.sum import sum
 
 
 @click.group()
@@ -16,3 +17,4 @@ def main() -> None:
 main.add_command(init)
 main.add_command(pull)
 main.add_command(extract)
+main.add_command(sum)
