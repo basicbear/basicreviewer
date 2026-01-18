@@ -17,19 +17,20 @@ def extract_pr_files(repo: dict, repos_dir: Path, output_dir: Path) -> None:
         output_dir: Root pullrequests directory
     """
     name = repo.get("name")
+    org = repo.get("org")
     pull_requests = repo.get("pull_requests", [])
 
-    if not name:
+    if not name or not org:
         return
 
-    repo_path = repos_dir / name
+    repo_path = repos_dir / org / name
 
     if not repo_path.exists():
         click.echo(f"Skipping PRs for {name} (repo not found)", err=True)
         return
 
-    # Create repo subfolder in pullrequests
-    repo_output_dir = output_dir / name
+    # Create org/repo subfolder in pullrequests
+    repo_output_dir = output_dir / org / name
     repo_output_dir.mkdir(parents=True, exist_ok=True)
 
     for pr_number in pull_requests:

@@ -67,6 +67,7 @@ def test_extract_processes_pr(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123],
@@ -76,8 +77,8 @@ def test_extract_processes_pr(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directory and files
-        repo_path = Path("repos/test-repo")
+        # Create repo directory and files with org level
+        repo_path = Path("repos/test-org/test-repo")
         repo_path.mkdir(parents=True)
         (repo_path / "src").mkdir(parents=True)
         (repo_path / "src" / "file1.py").write_text("content")
@@ -130,8 +131,8 @@ def test_extract_processes_pr(mock_run, tmp_path):
         assert "Extracting PR #123 for test-repo..." in result.output
         assert "Done." in result.output
 
-        # Verify directory structure was created
-        pr_dir = Path("pullrequests/test-repo/123")
+        # Verify directory structure was created with org level
+        pr_dir = Path("pullrequests/test-org/test-repo/123")
         assert pr_dir.exists()
         assert (pr_dir / "code" / "initial").exists()
         assert (pr_dir / "code" / "final").exists()
@@ -149,11 +150,13 @@ def test_extract_handles_multiple_repos_and_prs(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "org1",
                     "name": "repo1",
                     "url": "https://github.com/user/repo1.git",
                     "pull_requests": [100, 101],
                 },
                 {
+                    "org": "org2",
                     "name": "repo2",
                     "url": "https://github.com/user/repo2.git",
                     "pull_requests": [200],
@@ -163,12 +166,12 @@ def test_extract_handles_multiple_repos_and_prs(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directories and files
-        repo1_path = Path("repos/repo1")
+        # Create repo directories and files with org level
+        repo1_path = Path("repos/org1/repo1")
         repo1_path.mkdir(parents=True)
         (repo1_path / "file.py").write_text("content")
 
-        repo2_path = Path("repos/repo2")
+        repo2_path = Path("repos/org2/repo2")
         repo2_path.mkdir(parents=True)
         (repo2_path / "file.py").write_text("content")
 
@@ -199,10 +202,10 @@ def test_extract_handles_multiple_repos_and_prs(mock_run, tmp_path):
         assert "Extracting PR #101 for repo1..." in result.output
         assert "Extracting PR #200 for repo2..." in result.output
 
-        # Verify directory structures were created
-        assert Path("pullrequests/repo1/100").exists()
-        assert Path("pullrequests/repo1/101").exists()
-        assert Path("pullrequests/repo2/200").exists()
+        # Verify directory structures were created with org level
+        assert Path("pullrequests/org1/repo1/100").exists()
+        assert Path("pullrequests/org1/repo1/101").exists()
+        assert Path("pullrequests/org2/repo2/200").exists()
 
 
 @patch("subprocess.run")
@@ -215,6 +218,7 @@ def test_extract_skips_missing_pr_branch(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [999],
@@ -224,8 +228,8 @@ def test_extract_skips_missing_pr_branch(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         # Mock git log to fail (branch doesn't exist)
         def mock_subprocess_run(cmd, **kwargs):
@@ -253,6 +257,7 @@ def test_extract_skips_already_extracted_pr(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123],
@@ -262,11 +267,11 @@ def test_extract_skips_already_extracted_pr(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
-        # Create existing PR extraction (both code and diff.txt exist)
-        pr_dir = Path("pullrequests/test-repo/123")
+        # Create existing PR extraction (both code and diff.txt exist) with org level
+        pr_dir = Path("pullrequests/test-org/test-repo/123")
         code_dir = pr_dir / "code"
         code_dir.mkdir(parents=True)
         sum_dir = pr_dir / "sum"
@@ -293,6 +298,7 @@ def test_extract_partial_extraction_code_exists(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123],
@@ -302,11 +308,11 @@ def test_extract_partial_extraction_code_exists(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
-        # Create existing code folder but no diff.txt
-        pr_dir = Path("pullrequests/test-repo/123")
+        # Create existing code folder but no diff.txt with org level
+        pr_dir = Path("pullrequests/test-org/test-repo/123")
         code_dir = pr_dir / "code"
         code_dir.mkdir(parents=True)
 
@@ -366,6 +372,7 @@ def test_extract_partial_extraction_diff_exists(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123],
@@ -375,14 +382,14 @@ def test_extract_partial_extraction_diff_exists(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create repo directory and files
-        repo_path = Path("repos/test-repo")
+        # Create repo directory and files with org level
+        repo_path = Path("repos/test-org/test-repo")
         repo_path.mkdir(parents=True)
         (repo_path / "src").mkdir(parents=True)
         (repo_path / "src" / "file1.py").write_text("file content")
 
-        # Create existing diff.txt but no code folder
-        pr_dir = Path("pullrequests/test-repo/123")
+        # Create existing diff.txt but no code folder with org level
+        pr_dir = Path("pullrequests/test-org/test-repo/123")
         sum_dir = pr_dir / "sum"
         sum_dir.mkdir(parents=True)
         (sum_dir / "diff.txt").write_text("existing diff")

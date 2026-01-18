@@ -34,6 +34,7 @@ def _invoke_llm(llm: Any, prompt: str) -> str:
 
 def summarize_pr(
     repo_name: str,
+    org: str,
     pr_number: int,
     prompt_template: str,
     cache_files_config: dict,
@@ -44,16 +45,17 @@ def summarize_pr(
 
     Args:
         repo_name: Name of the repository
+        org: Organization name for the repository
         pr_number: Pull request number
         prompt_template: The prompt template string
         cache_files_config: Cache file name configuration from configs.json
         llm: Optional LLM client instance (required if not context_only)
         context_only: If True, only collect context and skip LLM generation
     """
-    click.echo(f"Summarizing PR #{pr_number} for {repo_name}")
+    click.echo(f"Summarizing PR #{pr_number} for {org}/{repo_name}")
 
     # Check if PR directory exists
-    pr_dir = Path("pullrequests") / repo_name / str(pr_number)
+    pr_dir = Path("pullrequests") / org / repo_name / str(pr_number)
     if not pr_dir.exists():
         click.echo(f"  Error: PR directory not found: {pr_dir}", err=True)
         click.echo("  Run 'crev extract' first to extract PR data.", err=True)
@@ -125,6 +127,10 @@ def sum_pr(
         return
 
     repo = repos[0]
+    org = repo.get("org")
+    if not org:
+        click.echo(f"Error: Missing 'org' field for repo '{repo_name}'", err=True)
+        raise SystemExit(1)
     pull_requests = repo.get("pull_requests", [])
 
     # Filter to specific PR if provided
@@ -156,7 +162,7 @@ def sum_pr(
             continue
 
         summarize_pr(
-            repo_name, pr, prompt_template, cache_files_config, llm, context_only
+            repo_name, org, pr, prompt_template, cache_files_config, llm, context_only
         )
 
     click.echo("Done.")

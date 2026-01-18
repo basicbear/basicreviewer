@@ -21,6 +21,7 @@ def setup_test_project(tmp_path):
         },
         "repos": [
             {
+                "org": "test-org",
                 "name": "test-repo",
                 "url": "https://github.com/test/repo.git",
                 "pull_requests": [1, 2],
@@ -97,11 +98,11 @@ def test_sum_repo_with_specific_repo_name(tmp_path):
         # Setup test project in the isolated filesystem
         setup_test_project(Path.cwd())
 
-        # Create repos directory with a git repo
+        # Create repos directory with a git repo (with org level)
         repos_dir = Path("repos")
         repos_dir.mkdir()
-        repo_dir = repos_dir / "test-repo"
-        repo_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
 
         # Create a simple README in the repo
         (repo_dir / "README.md").write_text("# Test Repo")
@@ -160,10 +161,10 @@ def test_sum_repo_with_specific_repo_name(tmp_path):
             result = runner.invoke(main, ["sum", "repo", "test-repo"])
 
             assert result.exit_code == 0
-            assert "Summarizing repository: test-repo" in result.output
+            assert "Summarizing repository: test-org/test-repo" in result.output
 
-            # Check that output file was created in the new location
-            output_dir = Path("pullrequests") / "test-repo" / "sum"
+            # Check that output file was created in the new location (with org level)
+            output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
             assert output_dir.exists()
 
             # Check for output file with versioned name
@@ -181,15 +182,15 @@ def test_sum_repo_skips_existing_final_output(tmp_path):
         # Setup test project in the isolated filesystem
         setup_test_project(Path.cwd())
 
-        # Create repos directory with git repo
+        # Create repos directory with git repo (with org level)
         repos_dir = Path("repos")
         repos_dir.mkdir()
-        repo_dir = repos_dir / "test-repo"
-        repo_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
         (repo_dir / "README.md").write_text("# Test Repo")
 
-        # Create pullrequests/test-repo/sum directory and existing output file
-        output_dir = Path("pullrequests") / "test-repo" / "sum"
+        # Create pullrequests/test-org/test-repo/sum directory and existing output file
+        output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
         output_dir.mkdir(parents=True)
         output_file = output_dir / "sum.repo.42.abc1234567.ai.md"
         output_file.write_text("Existing summary")
@@ -219,11 +220,13 @@ def test_sum_repo_processes_all_repos(tmp_path):
         },
         "repos": [
             {
+                "org": "org1",
                 "name": "repo1",
                 "url": "https://github.com/test/repo1.git",
                 "pull_requests": [],
             },
             {
+                "org": "org2",
                 "name": "repo2",
                 "url": "https://github.com/test/repo2.git",
                 "pull_requests": [],
@@ -256,13 +259,13 @@ def test_sum_repo_processes_all_repos(tmp_path):
         (prompts_dir / "sum_repo_test.txt").write_text("Test prompt")
         (prompts_dir / "sum_repo_infra.txt").write_text("Infra prompt")
 
-        # Create repos directory
+        # Create repos directory with org level
         repos_dir = Path("repos")
         repos_dir.mkdir()
-        (repos_dir / "repo1").mkdir()
-        (repos_dir / "repo1" / "main.py").write_text("# repo1")
-        (repos_dir / "repo2").mkdir()
-        (repos_dir / "repo2" / "main.py").write_text("# repo2")
+        (repos_dir / "org1" / "repo1").mkdir(parents=True)
+        (repos_dir / "org1" / "repo1" / "main.py").write_text("# repo1")
+        (repos_dir / "org2" / "repo2").mkdir(parents=True)
+        (repos_dir / "org2" / "repo2" / "main.py").write_text("# repo2")
 
         # Create pullrequests directory
         Path("pullrequests").mkdir()
@@ -315,8 +318,8 @@ def test_sum_repo_processes_all_repos(tmp_path):
             result = runner.invoke(main, ["sum", "repo"])
 
             assert result.exit_code == 0
-            assert "Summarizing repository: repo1" in result.output
-            assert "Summarizing repository: repo2" in result.output
+            assert "Summarizing repository: org1/repo1" in result.output
+            assert "Summarizing repository: org2/repo2" in result.output
 
 
 def test_sum_repo_context_only_flag(tmp_path):
@@ -327,11 +330,11 @@ def test_sum_repo_context_only_flag(tmp_path):
         # Setup test project in the isolated filesystem
         setup_test_project(Path.cwd())
 
-        # Create repos directory with a git repo
+        # Create repos directory with a git repo (with org level)
         repos_dir = Path("repos")
         repos_dir.mkdir()
-        repo_dir = repos_dir / "test-repo"
-        repo_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
         (repo_dir / "README.md").write_text("# Test Repo")
         (repo_dir / "main.py").write_text("print('hello')")
 
@@ -355,8 +358,8 @@ def test_sum_repo_context_only_flag(tmp_path):
             assert result.exit_code == 0
             assert "Context collection complete" in result.output
 
-            # Check that context file was created
-            output_dir = Path("pullrequests") / "test-repo" / "sum"
+            # Check that context file was created (with org level)
+            output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
             context_file = output_dir / "sum_repo.categorization.context.md"
             assert context_file.exists()
 
@@ -369,15 +372,15 @@ def test_sum_repo_caches_intermediate_results(tmp_path):
         # Setup test project in the isolated filesystem
         setup_test_project(Path.cwd())
 
-        # Create repos directory with a git repo
+        # Create repos directory with a git repo (with org level)
         repos_dir = Path("repos")
         repos_dir.mkdir()
-        repo_dir = repos_dir / "test-repo"
-        repo_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
         (repo_dir / "README.md").write_text("# Test Repo")
 
-        # Create pullrequests directory with cached categorization result
-        output_dir = Path("pullrequests") / "test-repo" / "sum"
+        # Create pullrequests directory with cached categorization result (with org level)
+        output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
         output_dir.mkdir(parents=True)
 
         # Create cached categorization context
@@ -434,9 +437,11 @@ def test_sum_repo_repo_not_found(tmp_path):
     with runner.isolated_filesystem(temp_dir=tmp_path):
         setup_test_project(Path.cwd())
 
-        # Create repos directory but not the specific repo
+        # Create repos directory but not the specific repo (with org level)
         repos_dir = Path("repos")
         repos_dir.mkdir()
+        # Create the org directory but not the repo
+        (repos_dir / "test-org").mkdir()
 
         # Mock the git commands
         with patch("crev.sum.sum_repo._get_git_version_info") as mock_git:

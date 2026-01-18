@@ -470,6 +470,7 @@ def _combine_output(
 
 def summarize_repo(
     repo_name: str,
+    org: str,
     config: dict,
     cache_files_config: dict,
     llm: Optional[Any] = None,
@@ -483,12 +484,13 @@ def summarize_repo(
 
     Args:
         repo_name: Name of the repository
+        org: Organization name for the repository
         config: Configuration dictionary
         cache_files_config: Cache file name configuration from configs.json
         llm: Optional LLM client instance (required if not context_only)
         context_only: If True, only collect context and skip LLM generation
     """
-    click.echo(f"Summarizing repository: {repo_name}")
+    click.echo(f"Summarizing repository: {org}/{repo_name}")
 
     # Check if repos directory exists
     repos_dir = Path("repos")
@@ -498,10 +500,10 @@ def summarize_repo(
         )
         return
 
-    repo_path = repos_dir / repo_name
+    repo_path = repos_dir / org / repo_name
     if not repo_path.exists():
         click.echo(
-            f"  Error: Repository '{repo_name}' not found in repos directory.", err=True
+            f"  Error: Repository '{org}/{repo_name}' not found in repos directory.", err=True
         )
         return
 
@@ -509,7 +511,7 @@ def summarize_repo(
     commit_count, short_hash = _get_git_version_info(repo_path)
 
     # Create output directory
-    output_dir = Path("pullrequests") / repo_name / "sum"
+    output_dir = Path("pullrequests") / org / repo_name / "sum"
     ensure_directory_exists(output_dir)
 
     # Format args for filename templates
@@ -635,10 +637,11 @@ def sum_repo(repo_name: Optional[str] = None, context_only: bool = False) -> Non
     # Process each repo
     for repo in repos:
         name = repo.get("name")
-        if not name:
-            click.echo("Skipping invalid repo entry (missing name)", err=True)
+        org = repo.get("org")
+        if not name or not org:
+            click.echo("Skipping invalid repo entry (missing name or org)", err=True)
             continue
 
-        summarize_repo(name, config, cache_files_config, llm, context_only)
+        summarize_repo(name, org, config, cache_files_config, llm, context_only)
 
     click.echo("Done.")

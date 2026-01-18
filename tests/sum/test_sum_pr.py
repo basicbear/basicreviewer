@@ -21,6 +21,7 @@ def setup_test_project(tmp_path):
         },
         "repos": [
             {
+                "org": "test-org",
                 "name": "test-repo",
                 "url": "https://github.com/test/repo.git",
                 "pull_requests": [1, 2],
@@ -102,7 +103,7 @@ def test_sum_pr_with_specific_pr_number(tmp_path):
         setup_test_project(Path.cwd())
 
         # Create PR directory structure
-        pr_dir = Path("pullrequests") / "test-repo" / "1"
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
         pr_dir.mkdir(parents=True)
 
         # Create sum directory with diff.txt
@@ -140,7 +141,7 @@ def test_sum_pr_skips_existing_files(tmp_path):
         setup_test_project(Path.cwd())
 
         # Create PR directory structure
-        pr_dir = Path("pullrequests") / "test-repo" / "1"
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
         pr_dir.mkdir(parents=True)
 
         # Create existing context file - will be loaded from cache
@@ -169,7 +170,7 @@ def test_sum_pr_context_caching(tmp_path):
         setup_test_project(Path.cwd())
 
         # Create PR directory structure
-        pr_dir = Path("pullrequests") / "test-repo" / "1"
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
         pr_dir.mkdir(parents=True)
 
         # Create sum directory with diff.txt
@@ -207,7 +208,7 @@ def test_sum_pr_loads_cached_context(tmp_path):
         setup_test_project(Path.cwd())
 
         # Create PR directory structure
-        pr_dir = Path("pullrequests") / "test-repo" / "1"
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
         pr_dir.mkdir(parents=True)
 
         # Create sum directory with cached context
@@ -241,7 +242,7 @@ def test_sum_pr_context_only_flag(tmp_path):
         setup_test_project(Path.cwd())
 
         # Create PR directory structure
-        pr_dir = Path("pullrequests") / "test-repo" / "1"
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
         pr_dir.mkdir(parents=True)
 
         # Create sum directory with diff.txt

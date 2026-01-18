@@ -37,6 +37,7 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [],
@@ -52,12 +53,13 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
         assert "Cloning test-repo..." in result.output
         assert "Done." in result.output
 
-        # Verify git clone was called
+        # Verify git clone was called with correct path including org
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "git"
         assert call_args[1] == "clone"
         assert call_args[2] == "https://github.com/user/test-repo.git"
+        assert str(call_args[3]).endswith("repos/test-org/test-repo")
 
 
 @patch("subprocess.run")
@@ -70,6 +72,7 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [],
@@ -79,8 +82,8 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create existing repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         result = runner.invoke(main, ["pull"])
 
@@ -92,7 +95,7 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
         assert mock_run.call_count == 2
         # First call should be git pull
         assert mock_run.call_args_list[0][0][0] == ["git", "pull"]
-        assert mock_run.call_args_list[0][1]["cwd"] == Path("repos/test-repo")
+        assert mock_run.call_args_list[0][1]["cwd"] == Path("repos/test-org/test-repo")
         # Second call should be git branch --list
         assert mock_run.call_args_list[1][0][0] == ["git", "branch", "--list"]
 
@@ -107,6 +110,7 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123, 456],
@@ -116,8 +120,8 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create existing repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         result = runner.invoke(main, ["pull"])
 
@@ -157,11 +161,13 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "org1",
                     "name": "repo1",
                     "url": "https://github.com/user/repo1.git",
                     "pull_requests": [],
                 },
                 {
+                    "org": "org2",
                     "name": "repo2",
                     "url": "https://github.com/user/repo2.git",
                     "pull_requests": [789],
@@ -171,8 +177,8 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory for repo2
-        Path("repos/repo2").mkdir(parents=True)
+        # Create existing repo directory for repo2 with org level
+        Path("repos/org2/repo2").mkdir(parents=True)
 
         result = runner.invoke(main, ["pull"])
 
@@ -195,6 +201,7 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123, 456],
@@ -204,8 +211,8 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create existing repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         # Mock subprocess.run to simulate branch check and git pull
         def mock_subprocess_run(cmd, **kwargs):

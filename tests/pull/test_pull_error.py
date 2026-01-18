@@ -23,16 +23,17 @@ def test_pull_fails_without_repos_json(tmp_path):
 
 
 def test_pull_skips_invalid_repo_entry(tmp_path):
-    """Test that pull skips repos with missing name or url."""
+    """Test that pull skips repos with missing name, url, or org."""
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with invalid entries
         repos_data = {
             "repos": [
-                {"name": "valid-repo", "url": "https://github.com/user/valid.git"},
-                {"name": "no-url"},
-                {"url": "https://github.com/user/no-name.git"},
+                {"org": "valid-org", "name": "valid-repo", "url": "https://github.com/user/valid.git"},
+                {"name": "no-url", "org": "some-org"},
+                {"url": "https://github.com/user/no-name.git", "org": "some-org"},
+                {"name": "no-org", "url": "https://github.com/user/no-org.git"},
                 {}
             ]
         }
@@ -56,6 +57,7 @@ def test_pull_skips_prs_when_repo_not_found(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123]
@@ -84,6 +86,7 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [999]
@@ -93,8 +96,8 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create existing repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         # Simulate PR fetch failure
         def mock_subprocess_run(cmd, **kwargs):
@@ -131,6 +134,7 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
         repos_data = {
             "repos": [
                 {
+                    "org": "test-org",
                     "name": "test-repo",
                     "url": "https://github.com/user/test-repo.git",
                     "pull_requests": [123, "invalid", None, 456]
@@ -140,8 +144,8 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
         with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
-        # Create existing repo directory
-        Path("repos/test-repo").mkdir(parents=True)
+        # Create existing repo directory with org level
+        Path("repos/test-org/test-repo").mkdir(parents=True)
 
         result = runner.invoke(main, ["pull"])
 
