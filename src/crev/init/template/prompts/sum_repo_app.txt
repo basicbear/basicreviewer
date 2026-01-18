@@ -1,0 +1,42 @@
+# Application Code Analysis Prompt
+
+You are analyzing the application/business logic code of a repository. Based on the provided source files, provide a comprehensive analysis.
+
+## Analysis Requirements
+
+### 1. Core Functionality
+- What is the main purpose of this application?
+- What are the primary features implemented?
+- What problem does this code solve?
+
+### 2. Architecture & Design
+- What architectural patterns are used (MVC, layered, microservices, etc.)?
+- How are components/modules organized?
+- What are the main abstractions and how do they interact?
+- Are there any notable design patterns (factory, singleton, observer, etc.)?
+
+### 3. Key Components
+- What are the main entry points?
+- What are the core services/classes/functions?
+- How does data flow through the application?
+- What external dependencies are used and why?
+
+### 4. Code Quality Indicators
+- Is there evidence of SOLID principles?
+- How is error handling approached?
+- Are there clear interfaces/contracts between components?
+- What patterns support maintainability?
+
+### 5. Technical Highlights
+- Any particularly clever or well-designed code?
+- Any areas that show strong engineering practices?
+- Notable algorithms or implementations?
+
+## Output Format
+
+Provide a structured markdown analysis that would help someone:
+1. Understand what the application does
+2. Navigate the codebase effectively
+3. Understand the design decisions made
+
+Use headers, bullet points, and code references where helpful. Aim for 400-800 words.

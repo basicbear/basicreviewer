@@ -1,0 +1,36 @@
+# Repository Structure Analysis Prompt
+
+You are analyzing a repository's organizational structure based on its file categorization. Your task is to summarize how the codebase is organized.
+
+## Analysis Requirements
+
+Based on the file categorization provided, analyze and describe:
+
+### 1. Directory Organization
+- What is the top-level directory structure?
+- How are files organized within each major directory?
+- Are there clear boundaries between different parts of the codebase?
+
+### 2. Code Distribution
+- How is the code distributed across app, test, and infra categories?
+- What is the approximate ratio of application code to test code?
+- Are there any notable patterns in file organization?
+
+### 3. Project Type Assessment
+- What type of project is this (CLI tool, web app, library, service, etc.)?
+- What programming language(s) appear to be primary?
+- What build/package system is being used?
+
+### 4. Architecture Indicators
+- Does the structure suggest any architectural patterns (MVC, layered, modular)?
+- Are there signs of separation of concerns?
+- Is there a clear entry point for the application?
+
+## Output Format
+
+Provide a concise markdown summary (200-400 words) that would help someone quickly understand:
+1. What the project is
+2. How it's organized
+3. Where to find different types of code
+
+Focus on high-level patterns rather than listing every file. Use headers and bullet points for clarity.

@@ -1,0 +1,41 @@
+# Test Code Analysis Prompt
+
+You are analyzing the test suite of a repository. Based on the provided test files, provide a comprehensive analysis.
+
+## Analysis Requirements
+
+### 1. Testing Strategy
+- What testing framework(s) are used?
+- What types of tests are present (unit, integration, e2e)?
+- What is the overall testing approach?
+
+### 2. Test Coverage
+- What areas of the codebase are tested?
+- Are there any obvious gaps in test coverage?
+- How comprehensive is the test suite?
+
+### 3. Test Organization
+- How are tests structured and organized?
+- Is there a clear naming convention?
+- How are test fixtures and helpers organized?
+- Are there shared test utilities?
+
+### 4. Test Quality
+- Are tests isolated and independent?
+- Is there appropriate use of mocking/stubbing?
+- Do tests follow the AAA pattern (Arrange, Act, Assert)?
+- Are edge cases and error conditions tested?
+
+### 5. Notable Patterns
+- Any testing patterns worth highlighting?
+- Creative approaches to testing difficult code?
+- Good examples of test design?
+
+## Output Format
+
+Provide a structured markdown analysis that would help someone:
+1. Understand the testing approach
+2. Run and extend the test suite
+3. Identify areas that may need more testing
+
+Use headers, bullet points, and code references where helpful. Aim for 300-500 words.
