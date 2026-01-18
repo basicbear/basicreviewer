@@ -1,0 +1,63 @@
+# File Categorization Prompt
+
+You are analyzing a repository's file structure. Your task is to categorize each file into one of three categories:
+
+## Categories
+
+1. **app** - Application/business logic code
+   - Source code that implements features
+   - Main application entry points
+   - Business logic, services, controllers
+   - Data models and schemas
+   - UI components and views
+   - API endpoints and handlers
+
+2. **test** - Test files
+   - Unit tests
+   - Integration tests
+   - End-to-end tests
+   - Test fixtures and helpers
+   - Test configuration files
+   - Mock data for testing
+
+3. **infra** - Infrastructure and configuration
+   - Build configuration (Makefile, webpack.config.js, etc.)
+   - Package manifests (package.json, pyproject.toml, Cargo.toml, etc.)
+   - CI/CD configuration (.github/workflows/, Jenkinsfile, etc.)
+   - Docker files (Dockerfile, docker-compose.yml)
+   - Environment configuration (.env.example, config files)
+   - Documentation (README, docs/, *.md)
+   - IDE/editor configuration (.vscode/, .editorconfig)
+   - Linter/formatter configuration (.eslintrc, .prettierrc, ruff.toml)
+
+## Output Format
+
+Return a JSON object with three arrays. Each array contains the file paths belonging to that category.
+
+```json
+{
+  "app": [
+    "src/main.py",
+    "src/services/user.py"
+  ],
+  "test": [
+    "tests/test_main.py",
+    "tests/conftest.py"
+  ],
+  "infra": [
+    "pyproject.toml",
+    "Dockerfile",
+    "README.md"
+  ]
+}
+```
+
+## Rules
+
+1. Every file must be categorized into exactly one category
+2. When in doubt:
+   - Files in `test/`, `tests/`, `spec/`, `__tests__/` directories → `test`
+   - Files in `src/`, `lib/`, `app/` directories → `app`
+   - Root-level config files → `infra`
+3. Use file paths exactly as provided (do not modify them)
+4. Return ONLY the JSON object, no additional text or explanation

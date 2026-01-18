@@ -11,14 +11,14 @@ from crev import main
 
 
 def test_extract_requires_repos_json(tmp_path):
-    """Test that extract fails when repos.json doesn't exist."""
+    """Test that extract fails when configs.json doesn't exist."""
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(main, ["extract"])
 
         assert result.exit_code == 1
-        assert "repos.json not found" in result.output
+        assert "configs.json not found" in result.output
 
 
 def test_extract_requires_repos_directory(tmp_path):
@@ -26,9 +26,9 @@ def test_extract_requires_repos_directory(tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json but not repos directory
+        # Create configs.json but not repos directory
         repos_data = {"repos": []}
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         result = runner.invoke(main, ["extract"])
@@ -42,9 +42,9 @@ def test_extract_creates_pullrequests_directory(tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create minimal repos.json
+        # Create minimal configs.json
         repos_data = {"repos": []}
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create empty repos directory
@@ -63,7 +63,7 @@ def test_extract_processes_pr(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with a PR
+        # Create configs.json with a PR
         repos_data = {
             "repos": [
                 {
@@ -73,7 +73,7 @@ def test_extract_processes_pr(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directory and files
@@ -145,7 +145,7 @@ def test_extract_handles_multiple_repos_and_prs(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with multiple repos and PRs
+        # Create configs.json with multiple repos and PRs
         repos_data = {
             "repos": [
                 {
@@ -160,7 +160,7 @@ def test_extract_handles_multiple_repos_and_prs(mock_run, tmp_path):
                 },
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directories and files
@@ -211,7 +211,7 @@ def test_extract_skips_missing_pr_branch(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with a PR
+        # Create configs.json with a PR
         repos_data = {
             "repos": [
                 {
@@ -221,7 +221,7 @@ def test_extract_skips_missing_pr_branch(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directory
@@ -249,7 +249,7 @@ def test_extract_skips_already_extracted_pr(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with a PR
+        # Create configs.json with a PR
         repos_data = {
             "repos": [
                 {
@@ -259,7 +259,7 @@ def test_extract_skips_already_extracted_pr(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directory
@@ -289,7 +289,7 @@ def test_extract_partial_extraction_code_exists(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with a PR
+        # Create configs.json with a PR
         repos_data = {
             "repos": [
                 {
@@ -299,7 +299,7 @@ def test_extract_partial_extraction_code_exists(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directory
@@ -362,7 +362,7 @@ def test_extract_partial_extraction_diff_exists(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with a PR
+        # Create configs.json with a PR
         repos_data = {
             "repos": [
                 {
@@ -372,7 +372,7 @@ def test_extract_partial_extraction_diff_exists(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create repo directory and files

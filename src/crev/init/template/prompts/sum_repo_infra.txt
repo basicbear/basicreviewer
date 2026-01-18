@@ -1,0 +1,48 @@
+# Infrastructure Analysis Prompt
+
+You are analyzing the infrastructure and configuration files of a repository. Based on the provided files, provide a comprehensive analysis.
+
+## Analysis Requirements
+
+### 1. Build & Package Management
+- What build system/package manager is used?
+- What are the key dependencies?
+- How is the project built and distributed?
+- Are there any custom build scripts?
+
+### 2. Development Environment
+- What development tools are configured?
+- What linters/formatters are set up?
+- What IDE/editor support is provided?
+- How would a new developer set up the project?
+
+### 3. CI/CD Pipeline
+- Is there automated testing configured?
+- What CI/CD platform is used?
+- What stages are in the pipeline?
+- How are deployments handled?
+
+### 4. Containerization & Deployment
+- Is Docker used? How is it configured?
+- Are there deployment configurations?
+- What environments are supported (dev, staging, prod)?
+
+### 5. Documentation
+- What documentation is provided?
+- Is there a contributing guide?
+- Are there setup instructions?
+- Is there API or usage documentation?
+
+### 6. Configuration Management
+- How is configuration handled?
+- Are there environment-specific configs?
+- How are secrets managed?
+
+## Output Format
+
+Provide a structured markdown analysis that would help someone:
+1. Set up the development environment
+2. Understand the build and deployment process
+3. Contribute to the project
+
+Use headers, bullet points, and specific file references where helpful. Aim for 300-500 words.

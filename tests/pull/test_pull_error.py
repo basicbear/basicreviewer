@@ -11,14 +11,14 @@ from crev import main
 
 
 def test_pull_fails_without_repos_json(tmp_path):
-    """Test that pull fails when repos.json is not found."""
+    """Test that pull fails when configs.json is not found."""
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         result = runner.invoke(main, ["pull"])
 
         assert result.exit_code == 1
-        assert "repos.json not found" in result.output
+        assert "configs.json not found" in result.output
         assert "Run 'crev init' first" in result.output
 
 
@@ -27,7 +27,7 @@ def test_pull_skips_invalid_repo_entry(tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with invalid entries
+        # Create configs.json with invalid entries
         repos_data = {
             "repos": [
                 {"name": "valid-repo", "url": "https://github.com/user/valid.git"},
@@ -36,7 +36,7 @@ def test_pull_skips_invalid_repo_entry(tmp_path):
                 {}
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         with patch("subprocess.run"):
@@ -52,7 +52,7 @@ def test_pull_skips_prs_when_repo_not_found(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json
+        # Create configs.json
         repos_data = {
             "repos": [
                 {
@@ -62,7 +62,7 @@ def test_pull_skips_prs_when_repo_not_found(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Simulate clone failure by not creating the directory
@@ -80,7 +80,7 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json
+        # Create configs.json
         repos_data = {
             "repos": [
                 {
@@ -90,7 +90,7 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory
@@ -127,7 +127,7 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create repos.json with invalid PR numbers
+        # Create configs.json with invalid PR numbers
         repos_data = {
             "repos": [
                 {
@@ -137,7 +137,7 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
                 }
             ]
         }
-        with open("repos.json", "w") as f:
+        with open("configs.json", "w") as f:
             json.dump(repos_data, f)
 
         # Create existing repo directory

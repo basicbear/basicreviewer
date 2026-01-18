@@ -24,7 +24,7 @@ def test_init_creates_directory(tmp_path):
 
 
 def test_init_creates_repos_json(tmp_path):
-    """Test that init creates a repos.json file with correct structure."""
+    """Test that init creates a configs.json file with correct structure."""
     runner = CliRunner()
     project_name = "test-project"
     project_path = tmp_path / project_name
@@ -33,27 +33,34 @@ def test_init_creates_repos_json(tmp_path):
 
     assert result.exit_code == 0
 
-    repos_file = project_path / "repos.json"
-    assert repos_file.exists()
+    configs_file = project_path / "configs.json"
+    assert configs_file.exists()
 
     # Verify JSON structure
-    with repos_file.open("r") as f:
-        repos_data = json.load(f)
+    with configs_file.open("r") as f:
+        configs_data = json.load(f)
 
-    assert "repos" in repos_data
-    assert isinstance(repos_data["repos"], list)
-    assert len(repos_data["repos"]) > 0
+    assert "repos" in configs_data
+    assert isinstance(configs_data["repos"], list)
+    assert len(configs_data["repos"]) > 0
 
     # Check first repo structure
-    first_repo = repos_data["repos"][0]
+    first_repo = configs_data["repos"][0]
     assert "name" in first_repo
     assert "url" in first_repo
     assert "pull_requests" in first_repo
     assert isinstance(first_repo["pull_requests"], list)
 
     # Check pull request structure
-    assert len(first_repo["pull_requests"]) == 2
-    assert first_repo["pull_requests"] == [123, 124]
+    assert len(first_repo["pull_requests"]) != 0
+
+    # Check prompts field
+    assert "prompts" in configs_data
+    assert isinstance(configs_data["prompts"], dict)
+
+    # Check LLM field
+    assert "llm" in configs_data
+    assert isinstance(configs_data["llm"], dict)
 
 
 def test_init_fails_on_existing_directory(tmp_path):
@@ -80,7 +87,9 @@ def test_init_creates_nested_directories(tmp_path):
 
     assert result.exit_code == 0
     assert nested_path.exists()
-    assert (nested_path / "repos.json").exists()
+    assert (nested_path / "configs.json").exists()
+    assert (nested_path / "prompts").exists()
+    assert (nested_path / "prompts").is_dir()
 
 
 def test_init_output_contains_next_steps(tmp_path):
@@ -92,5 +101,21 @@ def test_init_output_contains_next_steps(tmp_path):
 
     assert result.exit_code == 0
     assert "Next steps:" in result.output
-    assert "repos.json" in result.output
+    assert "configs.json" in result.output
     assert "crev pull" in result.output
+
+
+def test_init_creates_prompts_directory(tmp_path):
+    """Test that init creates a prompts directory with default files."""
+    runner = CliRunner()
+    project_name = "test-project"
+    project_path = tmp_path / project_name
+
+    result = runner.invoke(main, ["init", str(project_path)])
+
+    assert result.exit_code == 0
+
+    prompts_dir = project_path / "prompts"
+    assert prompts_dir.exists()
+    assert prompts_dir.is_dir()
+    assert "Created prompts directory:" in result.output

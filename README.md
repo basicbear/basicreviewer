@@ -6,7 +6,7 @@ Open source code review, performance review, and CV tool. Designed to help softw
 # Use
 ## Pre-Requisites
 - git CLI
-- gh CLI
+
 ## Install
 ```bash
 uv tool install . -e
@@ -26,6 +26,7 @@ uv tool remove crev
 #### Unreviewed Tests
 - cmd: pull - all except base
 - cmd: extract - all
+- cmd: sum - all
 
 # Shout outs
 - To all the people working hard to make the world a better place!

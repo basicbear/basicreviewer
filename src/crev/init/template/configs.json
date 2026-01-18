@@ -1,0 +1,46 @@
+{
+  "llm": {
+    "provider": "claude",
+    "model": "claude-sonnet-4-5-20250929",
+    "temperature": 0.0,
+    "max_tokens": 8192
+  },
+  "repos": [
+    {
+      "name": "example-repo",
+      "url": "https://github.com/user/example-repo.git",
+      "pull_requests": [
+        123,
+        124
+      ]
+    }
+  ],
+  "prompts": {
+    "sum_repo": "prompts/sum.repo.txt",
+    "sum_pr": "prompts/sum.pr.txt",
+    "sum_repo_file_category": "prompts/sum_repo_file_category.txt",
+    "sum_repo_structure": "prompts/sum_repo_structure.txt",
+    "sum_repo_app": "prompts/sum_repo_app.txt",
+    "sum_repo_test": "prompts/sum_repo_test.txt",
+    "sum_repo_infra": "prompts/sum_repo_infra.txt"
+  },
+  "cache_files": {
+    "sum_pr": {
+      "context": "sum/sum.context.md",
+      "output": "summary.pr.{pr_number}.ai.md"
+    },
+    "sum_repo": {
+      "categorization_context": "sum_repo.categorization.context.md",
+      "categorization_result": "sum_repo.categorization.json",
+      "structure_context": "sum_repo.structure.context.md",
+      "structure_result": "sum_repo.structure.md",
+      "app_context": "sum_repo.app.context.md",
+      "app_result": "sum_repo.app.md",
+      "test_context": "sum_repo.test.context.md",
+      "test_result": "sum_repo.test.md",
+      "infra_context": "sum_repo.infra.context.md",
+      "infra_result": "sum_repo.infra.md",
+      "output": "sum.repo.{commit_count}.{short_hash}.ai.md"
+    }
+  }
+}

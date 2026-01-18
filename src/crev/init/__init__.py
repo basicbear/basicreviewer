@@ -1,6 +1,6 @@
 """Init command for crev CLI."""
 
-import json
+import shutil
 from pathlib import Path
 
 import click
@@ -23,30 +23,29 @@ def init(path: str) -> None:
         click.echo(f"Error: Directory '{path}' already exists", err=True)
         raise click.Abort()
 
-    # Load configs template from assets
-    template_file = Path(__file__).parent / "assets" / "configs_template.json"
-    with template_file.open("r") as f:
-        configs_config = json.load(f)
+    # Copy template folder contents to project directory
+    template_dir = Path(__file__).parent / "template"
 
-    # Write configs.json to project directory
-    configs_file = project_path / "configs.json"
-    with configs_file.open("w") as f:
-        json.dump(configs_config, f, indent=2)
+    # Copy all files and directories from template
+    for item in template_dir.rglob("*"):
+        if item.is_file():
+            # Calculate relative path from template_dir
+            relative_path = item.relative_to(template_dir)
+            dest_path = project_path / relative_path
 
-    # Load .env template from assets
-    env_template_file = Path(__file__).parent / "assets" / ".env.template"
-    with env_template_file.open("r") as f:
-        env_content = f.read()
+            # Create parent directories if needed
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write .env file to project directory
-    env_file = project_path / ".env"
-    with env_file.open("w") as f:
-        f.write(env_content)
+            # Copy the file
+            shutil.copy2(item, dest_path)
+
+    click.echo(f"Created prompts directory: {project_path / 'prompts'}")
 
     # Read success message from file
     msg_file = Path(__file__).parent / "assets" / "init_success.txt"
     with msg_file.open("r") as f:
         message = f.read().format(
-            project_path=project_path.absolute(), configs_file=configs_file
+            project_path=project_path.absolute(),
+            configs_file=project_path / "configs.json"
         )
     click.echo(message)

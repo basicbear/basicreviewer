@@ -1,0 +1,38 @@
+# Pull Request Analysis Prompt
+
+You are analyzing a pull request. Based on the provided PR diff, changed files, and code context, please provide a comprehensive summary.
+
+## Analysis Requirements
+
+Please analyze and document the following aspects:
+
+### 1. Business Purpose
+- What problem does this PR solve?
+- What feature is being added, bug being fixed, or improvement being made?
+- Why was this change necessary?
+- What is the value/benefit of this change?
+
+### 2. Architecture & Design Philosophy
+- What architectural patterns or design principles are used in this PR?
+- How does this change fit into the overall system architecture?
+- Are there any notable design decisions or trade-offs?
+- What design patterns are employed (e.g., factory, singleton, observer, strategy)?
+- Does this maintain or improve the existing design philosophy?
+
+### 3. Key Changes
+- What are the main code changes?
+- Which files and components are affected?
+- What new functionality is introduced?
+- What existing functionality is modified or removed?
+- Are there any configuration or infrastructure changes?
+
+### 4. Impact Analysis
+- What parts of the system are affected by this change?
+- Are there any potential side effects?
+- What areas need special attention during review?
+- Are there any breaking changes?
+- What are the testing implications?
+
+## Output Format
+
+Please provide a clear, well-structured markdown summary that would help reviewers understand the PR's intent, approach, and impact. Use headers, bullet points, code snippets, and diagrams where appropriate.
