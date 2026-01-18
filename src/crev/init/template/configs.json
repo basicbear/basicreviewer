@@ -23,5 +23,11 @@
     "sum_repo_app": "prompts/sum_repo_app.txt",
     "sum_repo_test": "prompts/sum_repo_test.txt",
     "sum_repo_infra": "prompts/sum_repo_infra.txt"
+  },
+  "cache_files": {
+    "sum_pr": {
+      "context": "sum/sum.context.md",
+      "output": "summary.pr.{pr_number}.ai.md"
+    }
   }
 }

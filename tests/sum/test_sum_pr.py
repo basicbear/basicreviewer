@@ -126,7 +126,7 @@ def test_sum_pr_with_specific_pr_number(tmp_path):
             assert "Summarizing PR #1" in result.output
 
             # Check that output file was created
-            output_file = pr_dir / "summary.pr.1.ai.txt"
+            output_file = pr_dir / "summary.pr.1.ai.md"
             assert output_file.exists()
             assert output_file.read_text() == "Test PR summary"
 
@@ -144,13 +144,13 @@ def test_sum_pr_skips_existing_files(tmp_path):
         pr_dir.mkdir(parents=True)
 
         # Create existing summary file
-        output_file = pr_dir / "summary.pr.1.ai.txt"
+        output_file = pr_dir / "summary.pr.1.ai.md"
         output_file.write_text("Existing PR summary")
 
         result = runner.invoke(main, ["sum", "pr", "test-repo", "1"])
 
         assert result.exit_code == 0
-        assert "already exists, skipping" in result.output
+        assert "Skipping task, bypass file exists" in result.output
 
 
 def test_sum_pr_context_caching(tmp_path):
@@ -221,7 +221,7 @@ def test_sum_pr_loads_cached_context(tmp_path):
             result = runner.invoke(main, ["sum", "pr", "test-repo", "1"])
 
             assert result.exit_code == 0
-            assert "Loading cached PR context" in result.output
+            assert "Loading cached result from:" in result.output
 
 
 def test_sum_pr_context_only_flag(tmp_path):
@@ -255,5 +255,5 @@ def test_sum_pr_context_only_flag(tmp_path):
         assert context_file.exists()
 
         # Check that summary file was NOT created
-        output_file = pr_dir / "summary.pr.1.ai.txt"
+        output_file = pr_dir / "summary.pr.1.ai.md"
         assert not output_file.exists()

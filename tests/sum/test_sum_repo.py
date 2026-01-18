@@ -109,7 +109,7 @@ def test_sum_repo_with_specific_repo_name(tmp_path):
             assert "Summarizing repository: test-repo" in result.output
 
             # Check that output file was created
-            output_file = Path("pullrequests") / "test-repo" / "summary.test-repo.ai.txt"
+            output_file = Path("pullrequests") / "test-repo" / "summary.test-repo.ai.md"
             assert output_file.exists()
             assert output_file.read_text() == "Test summary"
 

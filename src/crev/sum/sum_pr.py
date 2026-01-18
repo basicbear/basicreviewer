@@ -5,23 +5,39 @@ from typing import Any, Optional
 
 import click
 
+from crev.utils import cache_file_check
 from crev.utils.ai.llm import get_llm_client
 from crev.utils.context.collector import pr as collect_pr_context
 
 from .util import (
     ensure_directory_exists,
-    generate_summary_with_llm,
     get_repos_from_config,
     load_configs,
     load_prompt_file,
-    should_skip_existing,
 )
+
+
+def _invoke_llm(llm: Any, prompt: str) -> str:
+    """Invoke the LLM and extract the response content.
+
+    Args:
+        llm: The LLM client instance
+        prompt: The prompt to send
+
+    Returns:
+        The response content as a string
+    """
+    response = llm.invoke(prompt)
+    if hasattr(response, "content"):
+        return response.content
+    return str(response)
 
 
 def summarize_pr(
     repo_name: str,
     pr_number: int,
     prompt_template: str,
+    cache_files_config: dict,
     llm: Optional[Any] = None,
     context_only: bool = False,
 ) -> None:
@@ -31,6 +47,7 @@ def summarize_pr(
         repo_name: Name of the repository
         pr_number: Pull request number
         prompt_template: The prompt template string
+        cache_files_config: Cache file name configuration from configs.json
         llm: Optional LLM client instance (required if not context_only)
         context_only: If True, only collect context and skip LLM generation
     """
@@ -43,42 +60,57 @@ def summarize_pr(
         click.echo("  Run 'crev extract' first to extract PR data.", err=True)
         return
 
-    # Check if output file exists (skip if not context_only mode)
-    if not context_only:
-        output_file = pr_dir / f"summary.pr.{pr_number}.ai.txt"
-        if should_skip_existing(output_file):
-            return
+    # Get cache file names from config (with defaults)
+    context_file_name = cache_files_config.get("context", "sum/sum.context.md")
+    output_file_name = cache_files_config.get(
+        "output", "summary.pr.{pr_number}.ai.md"
+    ).format(pr_number=pr_number)
 
-    # Ensure sum directory exists
-    sum_dir = pr_dir / "sum"
-    ensure_directory_exists(sum_dir)
+    # Define cache files in order of creation
+    # Each element is passed to cache_file, sub-arrays to other_bypass_files
+    cache_files: list[Path] = [
+        pr_dir / context_file_name,  # Context file
+        pr_dir / output_file_name,  # Final output file
+    ]
 
-    # Check for cached context or collect new context
-    context_file = sum_dir / "sum.context.md"
-    if context_file.exists():
-        click.echo("  Loading cached PR context...")
-        pr_context = context_file.read_text()
-    else:
+    # Ensure parent directories exist for cache files
+    for cache_file in cache_files:
+        ensure_directory_exists(cache_file.parent)
+
+    # Phase 1: Collect PR context
+    def collect_context_task() -> str:
         click.echo("  Collecting PR context...")
-        pr_context = collect_pr_context(pr_dir)
-        # Save context to cache file
-        context_file.write_text(pr_context)
-        click.echo(f"  Context saved to: {context_file}")
+        return collect_pr_context(pr_dir)
 
-    # If context_only mode, we're done
+    pr_context = cache_file_check(
+        cache_file=cache_files[0],
+        task=collect_context_task,
+        other_bypass_files=cache_files[1:],  # Skip if final output exists
+    )
+
+    # If context_only mode or skipped, we're done
     if context_only:
         click.echo("  Context collection complete (--context-only mode)")
         return
 
-    # Combine prompt and context
-    full_prompt = f"{prompt_template}\n\n{pr_context}"
+    if pr_context is None:
+        # Skipped due to bypass file existing
+        return
 
-    # Generate summary using the injected LLM client
+    # Phase 2: Generate summary with LLM
     if llm is None:
         click.echo("  Error: LLM client not provided", err=True)
         raise ValueError("LLM client is required when not in context_only mode")
 
-    generate_summary_with_llm(llm, full_prompt, output_file)
+    def generate_summary_task() -> str:
+        click.echo("  Generating summary with LLM...")
+        full_prompt = f"{prompt_template}\n\n{pr_context}"
+        return _invoke_llm(llm, full_prompt)
+
+    cache_file_check(
+        cache_file=cache_files[1],
+        task=generate_summary_task,
+    )
 
 
 def sum_pr(
@@ -118,6 +150,9 @@ def sum_pr(
     prompt_path = config.get("prompts", {}).get("sum_pr", "prompts/sum.pr.txt")
     prompt_template = load_prompt_file(prompt_path)
 
+    # Get cache files config
+    cache_files_config = config.get("cache_files", {}).get("sum_pr", {})
+
     # Get LLM client once if not in context_only mode
     llm = None if context_only else get_llm_client()
 
@@ -127,6 +162,8 @@ def sum_pr(
             click.echo(f"Skipping invalid PR number: {pr}", err=True)
             continue
 
-        summarize_pr(repo_name, pr, prompt_template, llm, context_only)
+        summarize_pr(
+            repo_name, pr, prompt_template, cache_files_config, llm, context_only
+        )
 
     click.echo("Done.")
