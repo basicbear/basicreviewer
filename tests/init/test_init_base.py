@@ -46,6 +46,7 @@ def test_init_creates_repos_json(tmp_path):
 
     # Check first repo structure
     first_repo = configs_data["repos"][0]
+    assert "org" in first_repo
     assert "name" in first_repo
     assert "url" in first_repo
     assert "pull_requests" in first_repo

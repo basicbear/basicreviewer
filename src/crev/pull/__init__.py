@@ -16,12 +16,15 @@ def getRepo(repo: dict, repos_dir: Path) -> None:
     """
     name = repo.get("name")
     url = repo.get("url")
+    org = repo.get("org")
 
-    if not name or not url:
+    if not name or not url or not org:
         click.echo(f"Skipping invalid repo entry: {repo}", err=True)
         return
 
-    repo_path = repos_dir / name
+    org_dir = repos_dir / org
+    org_dir.mkdir(parents=True, exist_ok=True)
+    repo_path = org_dir / name
 
     if repo_path.exists():
         click.echo(f"Pulling updates for {name}...")
@@ -39,12 +42,13 @@ def getPullRequest(repo: dict, repos_dir: Path) -> None:
         repos_dir: Directory containing cloned repos
     """
     name = repo.get("name")
+    org = repo.get("org")
     pull_requests = repo.get("pull_requests", [])
 
-    if not name:
+    if not name or not org:
         return
 
-    repo_path = repos_dir / name
+    repo_path = repos_dir / org / name
 
     if not repo_path.exists():
         click.echo(f"Skipping PRs for {name} (repo not found)", err=True)
