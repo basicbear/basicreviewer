@@ -28,6 +28,19 @@
     "sum_pr": {
       "context": "sum/sum.context.md",
       "output": "summary.pr.{pr_number}.ai.md"
+    },
+    "sum_repo": {
+      "categorization_context": "sum_repo.categorization.context.md",
+      "categorization_result": "sum_repo.categorization.json",
+      "structure_context": "sum_repo.structure.context.md",
+      "structure_result": "sum_repo.structure.md",
+      "app_context": "sum_repo.app.context.md",
+      "app_result": "sum_repo.app.md",
+      "test_context": "sum_repo.test.context.md",
+      "test_result": "sum_repo.test.md",
+      "infra_context": "sum_repo.infra.context.md",
+      "infra_result": "sum_repo.infra.md",
+      "output": "sum.repo.{commit_count}.{short_hash}.ai.md"
     }
   }
 }

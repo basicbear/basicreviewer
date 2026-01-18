@@ -10,7 +10,6 @@ from crev.utils.ai.llm import get_llm_client
 from crev.utils.context.collector import pr as collect_pr_context
 
 from .util import (
-    ensure_directory_exists,
     get_repos_from_config,
     load_configs,
     load_prompt_file,
@@ -60,22 +59,8 @@ def summarize_pr(
         click.echo("  Run 'crev extract' first to extract PR data.", err=True)
         return
 
-    # Get cache file names from config (with defaults)
-    context_file_name = cache_files_config.get("context", "sum/sum.context.md")
-    output_file_name = cache_files_config.get(
-        "output", "summary.pr.{pr_number}.ai.md"
-    ).format(pr_number=pr_number)
-
-    # Define cache files in order of creation
-    # Each element is passed to cache_file, sub-arrays to other_bypass_files
-    cache_files: list[Path] = [
-        pr_dir / context_file_name,  # Context file
-        pr_dir / output_file_name,  # Final output file
-    ]
-
-    # Ensure parent directories exist for cache files
-    for cache_file in cache_files:
-        ensure_directory_exists(cache_file.parent)
+    # Format args for filename templates
+    format_args = {"pr_number": pr_number}
 
     # Phase 1: Collect PR context
     def collect_context_task() -> str:
@@ -83,9 +68,13 @@ def summarize_pr(
         return collect_pr_context(pr_dir)
 
     pr_context = cache_file_check(
-        cache_file=cache_files[0],
+        output_dir=pr_dir,
+        cache_files_config=cache_files_config,
+        cache_key="context",
         task=collect_context_task,
-        other_bypass_files=cache_files[1:],  # Skip if final output exists
+        default_filename="sum/sum.context.md",
+        bypass_keys=["output"],
+        format_args=format_args,
     )
 
     # If context_only mode or skipped, we're done
@@ -108,8 +97,12 @@ def summarize_pr(
         return _invoke_llm(llm, full_prompt)
 
     cache_file_check(
-        cache_file=cache_files[1],
+        output_dir=pr_dir,
+        cache_files_config=cache_files_config,
+        cache_key="output",
         task=generate_summary_task,
+        default_filename="summary.pr.{pr_number}.ai.md",
+        format_args=format_args,
     )
 
 

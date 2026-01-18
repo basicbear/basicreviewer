@@ -24,15 +24,22 @@ def sum(ctx: click.Context) -> None:
 
 @sum.command()
 @click.argument("repo_name", required=False)
-def repo(repo_name: Optional[str] = None) -> None:
+@click.option(
+    "--context-only",
+    is_flag=True,
+    help="Only collect and cache repo context without generating summary",
+)
+def repo(repo_name: Optional[str] = None, context_only: bool = False) -> None:
     """Summarize repository business purpose, tech stack, and architecture.
 
     If REPO_NAME is provided, only that repository will be summarized.
     If no REPO_NAME is given, all repositories will be summarized.
 
     Skips repositories that already have summary files.
+
+    Use --context-only to collect context without generating summaries.
     """
-    execute_sum_repo(repo_name)
+    execute_sum_repo(repo_name, context_only)
 
 
 @sum.command()
