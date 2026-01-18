@@ -27,6 +27,8 @@ uv tool remove crev
 - cmd: pull - all except base
 - cmd: extract - all
 - cmd: sum - all
+- cmd: export - all
+- cmd: import - all
 
 # Shout outs
 - To all the people working hard to make the world a better place!

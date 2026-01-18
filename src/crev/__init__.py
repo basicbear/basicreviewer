@@ -1,5 +1,7 @@
 import click
 
+from crev.exim.export_cmd import export
+from crev.exim.import_cmd import import_cmd
 from crev.extract import extract
 from crev.init import init
 from crev.pull import pull
@@ -18,3 +20,5 @@ main.add_command(init)
 main.add_command(pull)
 main.add_command(extract)
 main.add_command(sum)
+main.add_command(export)
+main.add_command(import_cmd, name="import")
