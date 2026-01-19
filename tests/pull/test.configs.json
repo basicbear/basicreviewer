@@ -1,0 +1,10 @@
+{
+    "repos": [
+        {
+            "org": "test-org",
+            "name": "test-repo",
+            "url": "https://github.com/user/test-repo.git",
+            "pull_requests": [123, 456]
+        }
+    ]
+}

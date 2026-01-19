@@ -15,6 +15,10 @@ from .util import (
     load_prompt_file,
 )
 
+# Default cache filenames for sum_pr (used if not specified in configs.json)
+DEFAULT_CONTEXT_FILENAME = "sum.pr.{pr_number}.context.md"
+DEFAULT_OUTPUT_FILENAME = "sum.pr.{pr_number}.ai.md"
+
 
 def _invoke_llm(llm: Any, prompt: str) -> str:
     """Invoke the LLM and extract the response content.
@@ -56,6 +60,7 @@ def summarize_pr(
 
     # Check if PR directory exists
     pr_dir = Path("pullrequests") / org / repo_name / str(pr_number)
+    output_dir = Path("data") / org / repo_name / str(pr_number)
     if not pr_dir.exists():
         click.echo(f"  Error: PR directory not found: {pr_dir}", err=True)
         click.echo("  Run 'crev extract' first to extract PR data.", err=True)
@@ -69,12 +74,16 @@ def summarize_pr(
         click.echo("  Collecting PR context...")
         return collect_pr_context(pr_dir)
 
+    # Get filenames from config and format with pr_number
+    context_filename = cache_files_config.get("context").format(pr_number=pr_number)
+    output_filename = cache_files_config.get("result").format(pr_number=pr_number)
+
     pr_context = cache_file_check(
-        output_dir=pr_dir,
+        output_dir=output_dir,
         cache_files_config=cache_files_config,
         cache_key="context",
         task=collect_context_task,
-        default_filename="sum/sum.context.md",
+        default_filename=context_filename,
         bypass_keys=["output"],
         format_args=format_args,
     )
@@ -103,47 +112,32 @@ def summarize_pr(
         cache_files_config=cache_files_config,
         cache_key="output",
         task=generate_summary_task,
-        default_filename="summary.pr.{pr_number}.ai.md",
+        default_filename=output_filename,
         format_args=format_args,
     )
 
 
 def sum_pr(
-    repo_name: str, pr_number: Optional[int] = None, context_only: bool = False
+    org: Optional[str] = None,
+    repo_name: Optional[str] = None,
+    pr_number: Optional[int] = None,
+    context_only: bool = False,
 ) -> None:
     """Execute PR summarization.
 
     Args:
-        repo_name: Repository name (required)
-        pr_number: Optional specific PR number. If None, processes all PRs for the repo.
+        org: Optional org name. Use "." to match all orgs. If None, processes all orgs.
+        repo_name: Optional repo name. Use "." to match all repos. If None, processes all repos.
+        pr_number: Optional specific PR number. If None, processes all PRs for the repo(s).
         context_only: If True, only collect context and skip LLM generation
     """
     # Load config
     config = load_configs()
 
-    # Get the specific repo from config to get PR list
-    repos = get_repos_from_config(config, repo_name)
+    # Get repos to process (with org filtering)
+    repos = get_repos_from_config(config, org, repo_name)
     if not repos:
         return
-
-    repo = repos[0]
-    org = repo.get("org")
-    if not org:
-        click.echo(f"Error: Missing 'org' field for repo '{repo_name}'", err=True)
-        raise SystemExit(1)
-    pull_requests = repo.get("pull_requests", [])
-
-    # Filter to specific PR if provided
-    if pr_number is not None:
-        if pr_number not in pull_requests:
-            click.echo(
-                f"Error: PR #{pr_number} not found in configs.json for repo '{repo_name}'",
-                err=True,
-            )
-            raise SystemExit(1)
-        prs_to_process = [pr_number]
-    else:
-        prs_to_process = pull_requests
 
     # Load prompt once before processing PRs
     prompt_path = config.get("prompts", {}).get("sum_pr", "prompts/sum.pr.txt")
@@ -155,14 +149,42 @@ def sum_pr(
     # Get LLM client once if not in context_only mode
     llm = None if context_only else get_llm_client()
 
-    # Process each PR
-    for pr in prs_to_process:
-        if not isinstance(pr, int):
-            click.echo(f"Skipping invalid PR number: {pr}", err=True)
+    # Process each repo
+    for repo in repos:
+        current_repo_name = repo.get("name")
+        current_org = repo.get("org")
+        if not current_repo_name or not current_org:
+            click.echo("Skipping invalid repo entry (missing name or org)", err=True)
             continue
 
-        summarize_pr(
-            repo_name, org, pr, prompt_template, cache_files_config, llm, context_only
-        )
+        pull_requests = repo.get("pull_requests", [])
+
+        # Filter to specific PR if provided
+        if pr_number is not None:
+            if pr_number not in pull_requests:
+                click.echo(
+                    f"Error: PR #{pr_number} not found in configs.json for repo '{current_org}/{current_repo_name}'",
+                    err=True,
+                )
+                continue
+            prs_to_process = [pr_number]
+        else:
+            prs_to_process = pull_requests
+
+        # Process each PR for this repo
+        for pr in prs_to_process:
+            if not isinstance(pr, int):
+                click.echo(f"Skipping invalid PR number: {pr}", err=True)
+                continue
+
+            summarize_pr(
+                current_repo_name,
+                current_org,
+                pr,
+                prompt_template,
+                cache_files_config,
+                llm,
+                context_only,
+            )
 
     click.echo("Done.")

@@ -1,0 +1,31 @@
+{
+    "llm": {
+        "provider": "claude",
+        "model": "claude-sonnet-4-5-20250929",
+        "temperature": 0.0,
+        "max_tokens": 8192
+    },
+    "repos": [
+        {
+            "org": "test-org",
+            "name": "test-repo",
+            "url": "https://github.com/test/repo.git",
+            "pull_requests": [1, 2]
+        }
+    ],
+    "prompts": {
+        "sum_repo": "prompts/sum.repo.txt",
+        "sum_pr": "prompts/sum.pr.txt",
+        "sum_repo_file_category": "prompts/sum_repo_file_category.txt",
+        "sum_repo_structure": "prompts/sum_repo_structure.txt",
+        "sum_repo_app": "prompts/sum_repo_app.txt",
+        "sum_repo_test": "prompts/sum_repo_test.txt",
+        "sum_repo_infra": "prompts/sum_repo_infra.txt"
+    },
+    "cache_files": {
+        "sum_pr": {
+            "context": "sum.pr.{pr_number}.context.md",
+            "result": "sum.pr.{pr_number}.ai.md"
+        }
+    }
+}

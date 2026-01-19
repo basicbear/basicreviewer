@@ -1,0 +1,14 @@
+{
+  "llm": {
+    "provider": "claude",
+    "model": "test-model"
+  },
+  "repos": [
+    {
+      "org": "testorg",
+      "name": "testrepo",
+      "url": "https://example.com",
+      "pull_requests": [123]
+    }
+  ]
+}
