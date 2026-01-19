@@ -108,7 +108,7 @@ def summarize_pr(
         return _invoke_llm(llm, full_prompt)
 
     cache_file_check(
-        output_dir=pr_dir,
+        output_dir=output_dir,
         cache_files_config=cache_files_config,
         cache_key="output",
         task=generate_summary_task,

@@ -140,7 +140,7 @@ def test_sum_pr_with_specific_pr_number(tmp_path):
             assert "Summarizing PR #1" in result.output
 
             # Check that output file was created (uses config filename)
-            output_file = pr_dir / "sum.pr.1.ai.md"
+            output_file = output_dir / "sum.pr.1.ai.md"
             assert output_file.exists()
             assert output_file.read_text() == "Test PR summary"
 
