@@ -121,3 +121,10 @@ Add the following to your Claude Code MCP settings (in `.claude/settings.json` o
 
 After configuration, restart your MCP client to connect to the crev server.
 
+**MCP Inspector**
+
+Within a workspace created by `crev init`, run the following command:
+```sh
+npx @modelcontextprotocol/inspector crev mcp-serv
+```
+
