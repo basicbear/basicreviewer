@@ -2,12 +2,18 @@
 
 import json
 import subprocess
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from crev import main
+
+# Load base configs data from JSON file
+_TEST_CONFIGS_PATH = Path(__file__).parent / "test.configs.json"
+with _TEST_CONFIGS_PATH.open() as _f:
+    BASE_CONFIGS = json.load(_f)
 
 
 def test_pull_fails_without_repos_json(tmp_path):
@@ -28,17 +34,20 @@ def test_pull_skips_invalid_repo_entry(tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with invalid entries
-        repos_data = {
-            "repos": [
-                {"org": "valid-org", "name": "valid-repo", "url": "https://github.com/user/valid.git"},
-                {"name": "no-url", "org": "some-org"},
-                {"url": "https://github.com/user/no-name.git", "org": "some-org"},
-                {"name": "no-org", "url": "https://github.com/user/no-org.git"},
-                {}
-            ]
-        }
+        configs = deepcopy(BASE_CONFIGS)
+        configs["repos"] = [
+            {
+                "org": "valid-org",
+                "name": "valid-repo",
+                "url": "https://github.com/user/valid.git",
+            },
+            {"name": "no-url", "org": "some-org"},
+            {"url": "https://github.com/user/no-name.git", "org": "some-org"},
+            {"name": "no-org", "url": "https://github.com/user/no-org.git"},
+            {},
+        ]
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         with patch("subprocess.run"):
             result = runner.invoke(main, ["pull"])
@@ -54,18 +63,10 @@ def test_pull_skips_prs_when_repo_not_found(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [123]
-                }
-            ]
-        }
+        configs = deepcopy(BASE_CONFIGS)
+        configs["repos"][0]["pull_requests"] = [123]
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Simulate clone failure by not creating the directory
         mock_run.side_effect = lambda *args, **kwargs: None
@@ -83,18 +84,10 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [999]
-                }
-            ]
-        }
+        configs = deepcopy(BASE_CONFIGS)
+        configs["repos"][0]["pull_requests"] = [999]
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory with org level
         Path("repos/test-org/test-repo").mkdir(parents=True)
@@ -102,6 +95,7 @@ def test_pull_handles_pr_fetch_failure(mock_run, tmp_path):
         # Simulate PR fetch failure
         def mock_subprocess_run(cmd, **kwargs):
             from unittest.mock import Mock
+
             result = Mock()
             # Mock git pull
             if cmd == ["git", "pull"]:
@@ -131,18 +125,10 @@ def test_pull_skips_invalid_pr_numbers(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with invalid PR numbers
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [123, "invalid", None, 456]
-                }
-            ]
-        }
+        configs = deepcopy(BASE_CONFIGS)
+        configs["repos"][0]["pull_requests"] = [123, "invalid", None, 456]
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory with org level
         Path("repos/test-org/test-repo").mkdir(parents=True)

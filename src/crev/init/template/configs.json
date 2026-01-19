@@ -7,7 +7,7 @@
   },
   "repos": [
     {
-      "org": "self",
+      "org": "example-org",
       "name": "example-repo",
       "url": "https://github.com/user/example-repo.git",
       "pull_requests": [
@@ -27,8 +27,8 @@
   },
   "cache_files": {
     "sum_pr": {
-      "context": "sum.context.md",
-      "output": "summary.pr.{pr_number}.ai.md"
+      "context": "sum.pr.{pr_number}.context.md",
+      "result": "sum.pr.{pr_number}.ai.md"
     },
     "sum_repo": {
       "categorization_context": "sum_repo.categorization.context.md",

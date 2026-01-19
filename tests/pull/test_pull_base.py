@@ -1,12 +1,18 @@
 """Base tests for the pull command - core functionality."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
 
 from crev import main
+
+# Load base configs data from JSON file
+_TEST_CONFIGS_PATH = Path(__file__).parent / "test.configs.json"
+with _TEST_CONFIGS_PATH.open() as _f:
+    BASE_configs = json.load(_f)
 
 
 def test_pull_creates_repos_directory(tmp_path):
@@ -15,9 +21,10 @@ def test_pull_creates_repos_directory(tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create minimal configs.json
-        repos_data = {"repos": []}
+        configs = deepcopy(BASE_configs)
+        configs["repos"] = []
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         with patch("subprocess.run"):
             result = runner.invoke(main, ["pull"])
@@ -34,18 +41,10 @@ def test_pull_clones_new_repo(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with one repo
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [],
-                }
-            ]
-        }
+        configs = deepcopy(BASE_configs)
+        configs["repos"][0]["pull_requests"] = []
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         result = runner.invoke(main, ["pull"])
 
@@ -69,18 +68,10 @@ def test_pull_updates_existing_repo(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [],
-                }
-            ]
-        }
+        configs = deepcopy(BASE_configs)
+        configs["repos"][0]["pull_requests"] = []
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory with org level
         Path("repos/test-org/test-repo").mkdir(parents=True)
@@ -106,19 +97,10 @@ def test_pull_fetches_pull_requests(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create configs.json with PRs
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [123, 456],
-                }
-            ]
-        }
+        # Create configs.json with PRs (uses base which has [123, 456])
+        configs = deepcopy(BASE_configs)
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory with org level
         Path("repos/test-org/test-repo").mkdir(parents=True)
@@ -158,24 +140,23 @@ def test_pull_handles_multiple_repos(mock_run, tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with multiple repos
-        repos_data = {
-            "repos": [
-                {
-                    "org": "org1",
-                    "name": "repo1",
-                    "url": "https://github.com/user/repo1.git",
-                    "pull_requests": [],
-                },
-                {
-                    "org": "org2",
-                    "name": "repo2",
-                    "url": "https://github.com/user/repo2.git",
-                    "pull_requests": [789],
-                },
-            ]
-        }
+        configs = deepcopy(BASE_configs)
+        configs["repos"] = [
+            {
+                "org": "org1",
+                "name": "repo1",
+                "url": "https://github.com/user/repo1.git",
+                "pull_requests": [],
+            },
+            {
+                "org": "org2",
+                "name": "repo2",
+                "url": "https://github.com/user/repo2.git",
+                "pull_requests": [789],
+            },
+        ]
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory for repo2 with org level
         Path("repos/org2/repo2").mkdir(parents=True)
@@ -197,19 +178,10 @@ def test_pull_skips_existing_pr_branches(mock_run, tmp_path):
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        # Create configs.json with PRs
-        repos_data = {
-            "repos": [
-                {
-                    "org": "test-org",
-                    "name": "test-repo",
-                    "url": "https://github.com/user/test-repo.git",
-                    "pull_requests": [123, 456],
-                }
-            ]
-        }
+        # Create configs.json with PRs (uses base which has [123, 456])
+        configs = deepcopy(BASE_configs)
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         # Create existing repo directory with org level
         Path("repos/test-org/test-repo").mkdir(parents=True)

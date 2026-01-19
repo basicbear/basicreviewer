@@ -1,5 +1,6 @@
 """Tests for the import command."""
 
+import copy
 import json
 from pathlib import Path
 
@@ -7,13 +8,18 @@ from click.testing import CliRunner
 
 from crev import main
 
+TEST_CONFIGS_PATH = Path(__file__).parent / "test.configs.json"
+
+
+def load_test_configs() -> dict:
+    """Load the shared test configs."""
+    return json.loads(TEST_CONFIGS_PATH.read_text())
+
 
 def create_empty_workspace(base_path: Path) -> Path:
     """Create an empty workspace with just configs.json."""
-    configs = {
-        "llm": {"provider": "claude", "model": "test-model"},
-        "repos": [],
-    }
+    configs = copy.deepcopy(load_test_configs())
+    configs["repos"] = []
     configs_file = base_path / "configs.json"
     configs_file.write_text(json.dumps(configs, indent=2))
     return base_path

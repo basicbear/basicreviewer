@@ -14,9 +14,9 @@ def test_pull_handles_empty_repos_list(tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json with empty repos list
-        repos_data = {"repos": []}
+        configs = {"repos": []}
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         with patch("subprocess.run"):
             result = runner.invoke(main, ["pull"])
@@ -31,9 +31,9 @@ def test_pull_handles_missing_repos_key(tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create configs.json without repos key
-        repos_data = {}
+        configs = {}
         with open("configs.json", "w") as f:
-            json.dump(repos_data, f)
+            json.dump(configs, f)
 
         with patch("subprocess.run"):
             result = runner.invoke(main, ["pull"])

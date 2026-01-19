@@ -1,6 +1,7 @@
 """Tests for the sum repo command."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -8,39 +9,20 @@ from click.testing import CliRunner
 
 from crev import main
 
+# Load base configs data from JSON file
+_TEST_CONFIGS_PATH = Path(__file__).parent / "test.configs.json"
+with _TEST_CONFIGS_PATH.open() as _f:
+    BASE_CONFIGS_DATA = json.load(_f)
+
 
 def setup_test_project(tmp_path):
     """Set up a test project with configs.json and prompts."""
-    # Create configs.json
-    configs_data = {
-        "llm": {
-            "provider": "claude",
-            "model": "claude-sonnet-4-5-20250929",
-            "temperature": 0.0,
-            "max_tokens": 8192,
-        },
-        "repos": [
-            {
-                "org": "test-org",
-                "name": "test-repo",
-                "url": "https://github.com/test/repo.git",
-                "pull_requests": [1, 2],
-            }
-        ],
-        "prompts": {
-            "sum_repo": "prompts/sum.repo.txt",
-            "sum_pr": "prompts/sum.pr.txt",
-            "sum_repo_file_category": "prompts/sum_repo_file_category.txt",
-            "sum_repo_structure": "prompts/sum_repo_structure.txt",
-            "sum_repo_app": "prompts/sum_repo_app.txt",
-            "sum_repo_test": "prompts/sum_repo_test.txt",
-            "sum_repo_infra": "prompts/sum_repo_infra.txt",
-        },
-    }
+    # Create configs.json from base data
+    configs = deepcopy(BASE_CONFIGS_DATA)
 
     configs_file = tmp_path / "configs.json"
     with configs_file.open("w") as f:
-        json.dump(configs_data, f)
+        json.dump(configs, f)
 
     # Create prompts directory
     prompts_dir = tmp_path / "prompts"
@@ -108,8 +90,8 @@ def test_sum_repo_with_specific_repo_name(tmp_path):
         (repo_dir / "README.md").write_text("# Test Repo")
         (repo_dir / "main.py").write_text("print('hello')")
 
-        # Create pullrequests directory
-        Path("pullrequests").mkdir()
+        # Create data directory
+        Path("data").mkdir()
 
         # Mock the git commands and LLM client
         with (
@@ -158,13 +140,13 @@ def test_sum_repo_with_specific_repo_name(tmp_path):
             mock_collect_structure.return_value = "structure context"
             mock_collect_repo.return_value = "repo context"
 
-            result = runner.invoke(main, ["sum", "repo", "test-repo"])
+            result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
 
             assert result.exit_code == 0
             assert "Summarizing repository: test-org/test-repo" in result.output
 
             # Check that output file was created in the new location (with org level)
-            output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
+            output_dir = Path("data") / "test-org" / "test-repo" / "sum"
             assert output_dir.exists()
 
             # Check for output file with versioned name
@@ -189,8 +171,8 @@ def test_sum_repo_skips_existing_final_output(tmp_path):
         repo_dir.mkdir(parents=True)
         (repo_dir / "README.md").write_text("# Test Repo")
 
-        # Create pullrequests/test-org/test-repo/sum directory and existing output file
-        output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
+        # Create data/test-org/test-repo/sum directory and existing output file
+        output_dir = Path("data") / "test-org" / "test-repo" / "sum"
         output_dir.mkdir(parents=True)
         output_file = output_dir / "sum.repo.42.abc1234567.ai.md"
         output_file.write_text("Existing summary")
@@ -199,7 +181,7 @@ def test_sum_repo_skips_existing_final_output(tmp_path):
         with patch("crev.sum.sum_repo._get_git_version_info") as mock_git:
             mock_git.return_value = (42, "abc1234567")
 
-            result = runner.invoke(main, ["sum", "repo", "test-repo"])
+            result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
 
             assert result.exit_code == 0
             # Should skip because final output exists
@@ -210,44 +192,28 @@ def test_sum_repo_processes_all_repos(tmp_path):
     """Test that sum repo processes all repos when no repo name is specified."""
     runner = CliRunner()
 
-    # Create configs with multiple repos
-    configs_data = {
-        "llm": {
-            "provider": "claude",
-            "model": "claude-sonnet-4-5-20250929",
-            "temperature": 0.0,
-            "max_tokens": 8192,
+    # Create configs with multiple repos (deep copy base and modify)
+    configs = deepcopy(BASE_CONFIGS_DATA)
+    configs["repos"] = [
+        {
+            "org": "org1",
+            "name": "repo1",
+            "url": "https://github.com/test/repo1.git",
+            "pull_requests": [],
         },
-        "repos": [
-            {
-                "org": "org1",
-                "name": "repo1",
-                "url": "https://github.com/test/repo1.git",
-                "pull_requests": [],
-            },
-            {
-                "org": "org2",
-                "name": "repo2",
-                "url": "https://github.com/test/repo2.git",
-                "pull_requests": [],
-            },
-        ],
-        "prompts": {
-            "sum_repo": "prompts/sum.repo.txt",
-            "sum_pr": "prompts/sum.pr.txt",
-            "sum_repo_file_category": "prompts/sum_repo_file_category.txt",
-            "sum_repo_structure": "prompts/sum_repo_structure.txt",
-            "sum_repo_app": "prompts/sum_repo_app.txt",
-            "sum_repo_test": "prompts/sum_repo_test.txt",
-            "sum_repo_infra": "prompts/sum_repo_infra.txt",
+        {
+            "org": "org2",
+            "name": "repo2",
+            "url": "https://github.com/test/repo2.git",
+            "pull_requests": [],
         },
-    }
+    ]
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Use Path.cwd() to create files in the isolated filesystem
         configs_file = Path("configs.json")
         with configs_file.open("w") as f:
-            json.dump(configs_data, f)
+            json.dump(configs, f)
 
         # Create prompts directory
         prompts_dir = Path("prompts")
@@ -267,8 +233,8 @@ def test_sum_repo_processes_all_repos(tmp_path):
         (repos_dir / "org2" / "repo2").mkdir(parents=True)
         (repos_dir / "org2" / "repo2" / "main.py").write_text("# repo2")
 
-        # Create pullrequests directory
-        Path("pullrequests").mkdir()
+        # Create data directory
+        Path("data").mkdir()
 
         # Mock the git commands and LLM client
         with (
@@ -338,8 +304,8 @@ def test_sum_repo_context_only_flag(tmp_path):
         (repo_dir / "README.md").write_text("# Test Repo")
         (repo_dir / "main.py").write_text("print('hello')")
 
-        # Create pullrequests directory
-        Path("pullrequests").mkdir()
+        # Create data directory
+        Path("data").mkdir()
 
         # Mock the git commands and context collector
         with (
@@ -352,14 +318,14 @@ def test_sum_repo_context_only_flag(tmp_path):
             mock_collect_file_category.return_value = "file listing context"
 
             result = runner.invoke(
-                main, ["sum", "repo", "test-repo", "--context-only"]
+                main, ["sum", "repo", "test-org", "test-repo", "--context-only"]
             )
 
             assert result.exit_code == 0
             assert "Context collection complete" in result.output
 
             # Check that context file was created (with org level)
-            output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
+            output_dir = Path("data") / "test-org" / "test-repo" / "sum"
             context_file = output_dir / "sum_repo.categorization.context.md"
             assert context_file.exists()
 
@@ -379,8 +345,8 @@ def test_sum_repo_caches_intermediate_results(tmp_path):
         repo_dir.mkdir(parents=True)
         (repo_dir / "README.md").write_text("# Test Repo")
 
-        # Create pullrequests directory with cached categorization result (with org level)
-        output_dir = Path("pullrequests") / "test-org" / "test-repo" / "sum"
+        # Create data directory with cached categorization result (with org level)
+        output_dir = Path("data") / "test-org" / "test-repo" / "sum"
         output_dir.mkdir(parents=True)
 
         # Create cached categorization context
@@ -423,7 +389,7 @@ def test_sum_repo_caches_intermediate_results(tmp_path):
             mock_collect_structure.return_value = "structure context"
             mock_collect_repo.return_value = "repo context"
 
-            result = runner.invoke(main, ["sum", "repo", "test-repo"])
+            result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
 
             assert result.exit_code == 0
             # Should load cached categorization
@@ -447,6 +413,80 @@ def test_sum_repo_repo_not_found(tmp_path):
         with patch("crev.sum.sum_repo._get_git_version_info") as mock_git:
             mock_git.return_value = (42, "abc1234567")
 
-            result = runner.invoke(main, ["sum", "repo", "test-repo"])
+            result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
 
             assert "not found in repos directory" in result.output
+
+
+def test_sum_repo_with_dot_wildcard(tmp_path):
+    """Test that sum repo accepts '.' as wildcard for all repos."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project in the isolated filesystem
+        setup_test_project(Path.cwd())
+
+        # Create repos directory with a git repo (with org level)
+        repos_dir = Path("repos")
+        repos_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
+        (repo_dir / "README.md").write_text("# Test Repo")
+        (repo_dir / "main.py").write_text("print('hello')")
+
+        # Create data directory
+        Path("data").mkdir()
+
+        # Mock the git commands and context collector
+        with (
+            patch("crev.sum.sum_repo._get_git_version_info") as mock_git,
+            patch(
+                "crev.sum.sum_repo.collect_file_category"
+            ) as mock_collect_file_category,
+        ):
+            mock_git.return_value = (42, "abc1234567")
+            mock_collect_file_category.return_value = "file listing context"
+
+            # Use "." to process all repos in test-org
+            result = runner.invoke(
+                main, ["sum", "repo", "test-org", ".", "--context-only"]
+            )
+
+            assert result.exit_code == 0
+            assert "Summarizing repository: test-org/test-repo" in result.output
+
+
+def test_sum_repo_with_org_only(tmp_path):
+    """Test that sum repo with only org processes all repos in that org."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project in the isolated filesystem
+        setup_test_project(Path.cwd())
+
+        # Create repos directory with a git repo (with org level)
+        repos_dir = Path("repos")
+        repos_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
+        (repo_dir / "README.md").write_text("# Test Repo")
+        (repo_dir / "main.py").write_text("print('hello')")
+
+        # Create data directory
+        Path("data").mkdir()
+
+        # Mock the git commands and context collector
+        with (
+            patch("crev.sum.sum_repo._get_git_version_info") as mock_git,
+            patch(
+                "crev.sum.sum_repo.collect_file_category"
+            ) as mock_collect_file_category,
+        ):
+            mock_git.return_value = (42, "abc1234567")
+            mock_collect_file_category.return_value = "file listing context"
+
+            # Only specify org
+            result = runner.invoke(main, ["sum", "repo", "test-org", "--context-only"])
+
+            assert result.exit_code == 0
+            assert "Summarizing repository: test-org/test-repo" in result.output

@@ -511,7 +511,7 @@ def summarize_repo(
     commit_count, short_hash = _get_git_version_info(repo_path)
 
     # Create output directory
-    output_dir = Path("pullrequests") / org / repo_name / "sum"
+    output_dir = Path("data") / org / repo_name / "sum"
     ensure_directory_exists(output_dir)
 
     # Format args for filename templates
@@ -615,11 +615,16 @@ def summarize_repo(
     )
 
 
-def sum_repo(repo_name: Optional[str] = None, context_only: bool = False) -> None:
+def sum_repo(
+    org: Optional[str] = None,
+    repo_name: Optional[str] = None,
+    context_only: bool = False,
+) -> None:
     """Execute repo summarization.
 
     Args:
-        repo_name: Optional specific repo name. If None, processes all repos.
+        org: Optional org name. Use "." to match all orgs. If None, processes all orgs.
+        repo_name: Optional specific repo name. Use "." to match all repos. If None, processes all repos.
         context_only: If True, only collect context and skip LLM generation
     """
     # Load config
@@ -628,8 +633,8 @@ def sum_repo(repo_name: Optional[str] = None, context_only: bool = False) -> Non
     # Get cache files config for sum_repo
     cache_files_config = config.get("cache_files", {}).get("sum_repo", {})
 
-    # Get repos to process
-    repos = get_repos_from_config(config, repo_name)
+    # Get repos to process (with org filtering)
+    repos = get_repos_from_config(config, org, repo_name)
 
     # Get LLM client once if not in context_only mode
     llm = None if context_only else get_llm_client()
@@ -637,11 +642,11 @@ def sum_repo(repo_name: Optional[str] = None, context_only: bool = False) -> Non
     # Process each repo
     for repo in repos:
         name = repo.get("name")
-        org = repo.get("org")
-        if not name or not org:
+        repo_org = repo.get("org")
+        if not name or not repo_org:
             click.echo("Skipping invalid repo entry (missing name or org)", err=True)
             continue
 
-        summarize_repo(name, org, config, cache_files_config, llm, context_only)
+        summarize_repo(name, repo_org, config, cache_files_config, llm, context_only)
 
     click.echo("Done.")

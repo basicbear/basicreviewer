@@ -26,12 +26,17 @@ def load_configs() -> dict:
         return json.load(f)
 
 
-def get_repos_from_config(config: dict, repo_name: Optional[str] = None) -> list[dict]:
+def get_repos_from_config(
+    config: dict,
+    org: Optional[str] = None,
+    repo_name: Optional[str] = None,
+) -> list[dict]:
     """Get repos to process from config.
 
     Args:
         config: Configuration dictionary
-        repo_name: Optional specific repo name to filter by
+        org: Optional org name to filter by. Use "." to match all orgs.
+        repo_name: Optional specific repo name to filter by. Use "." to match all repos.
 
     Returns:
         List of repo dictionaries to process
@@ -41,11 +46,32 @@ def get_repos_from_config(config: dict, repo_name: Optional[str] = None) -> list
     """
     all_repos = config.get("repos", [])
 
+    # Handle "." as wildcard meaning "all"
+    if org == ".":
+        org = None
+    if repo_name == ".":
+        repo_name = None
+
+    # Filter by org if specified
+    if org:
+        all_repos = [r for r in all_repos if r.get("org") == org]
+        if not all_repos:
+            click.echo(f"Error: Organization '{org}' not found in configs.json", err=True)
+            raise SystemExit(1)
+
+    # Filter by repo name if specified
     if repo_name:
-        # Filter to specific repo
         repos = [r for r in all_repos if r.get("name") == repo_name]
         if not repos:
-            click.echo(f"Error: Repository '{repo_name}' not found in configs.json", err=True)
+            if org:
+                click.echo(
+                    f"Error: Repository '{repo_name}' not found in org '{org}' in configs.json",
+                    err=True,
+                )
+            else:
+                click.echo(
+                    f"Error: Repository '{repo_name}' not found in configs.json", err=True
+                )
             raise SystemExit(1)
         return repos
     else:

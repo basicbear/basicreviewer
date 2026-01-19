@@ -1,5 +1,6 @@
 """Tests for the export command."""
 
+import copy
 import json
 from pathlib import Path
 
@@ -7,14 +8,18 @@ from click.testing import CliRunner
 
 from crev import main
 
+TEST_CONFIGS_PATH = Path(__file__).parent / "test.configs.json"
+
+
+def load_test_configs() -> dict:
+    """Load the shared test configs."""
+    return json.loads(TEST_CONFIGS_PATH.read_text())
+
 
 def create_test_workspace(base_path: Path) -> Path:
     """Create a test workspace with configs.json and sample files."""
     # Create configs.json
-    configs = {
-        "llm": {"provider": "claude", "model": "test-model"},
-        "repos": [{"org": "testorg", "name": "testrepo", "url": "https://example.com", "pull_requests": [123]}],
-    }
+    configs = load_test_configs()
     configs_file = base_path / "configs.json"
     configs_file.write_text(json.dumps(configs, indent=2))
 
@@ -182,7 +187,8 @@ def test_export_no_matching_files(tmp_path):
 
     with runner.isolated_filesystem(temp_dir=tmp_path):
         # Create workspace without any ai files
-        configs = {"llm": {}, "repos": []}
+        configs = copy.deepcopy(load_test_configs())
+        configs["repos"] = []
         Path("configs.json").write_text(json.dumps(configs))
         repos_dir = Path("repos/org/repo")
         repos_dir.mkdir(parents=True)
