@@ -76,6 +76,48 @@ Files are merged into the current workspace. Collisions (matching org/repo or or
 Start the MCP (Model Context Protocol) server to expose crev data through standardized endpoints.
 
 **Endpoints:**
-- Summary: `sum_repo`, `sum_pr`, `sum_list`
-- CV: `stack`, `accomplishments`, `org_list`
+
+| Endpoint | Description |
+|----------|-------------|
+| `sum_repo` | Get repository summaries by org(s) |
+| `sum_pr` | Get PR summaries by org/repo/pr_number |
+| `sum_list` | List available summaries |
+| `stack` | Get tech stack data from repo summaries |
+| `accomplishments` | Get accomplishment data from PR summaries |
+| `org_list` | List available organizations |
+
+**Configuration with Claude Desktop:**
+
+Add the following to your Claude Desktop MCP configuration file:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "crev": {
+      "command": "crev",
+      "args": ["mcp-serv"]
+    }
+  }
+}
+```
+
+**Configuration with Claude Code:**
+
+Add the following to your Claude Code MCP settings (in `.claude/settings.json` or via the `/mcp` command):
+
+```json
+{
+  "mcpServers": {
+    "crev": {
+      "command": "crev",
+      "args": ["mcp-serv"]
+    }
+  }
+}
+```
+
+After configuration, restart your MCP client to connect to the crev server.
 
