@@ -32,9 +32,36 @@ crev [OPTIONS] COMMAND [ARGS]...
 #### `crev init <path>`
 Initialize a new crev project. Creates a folder at PATH with a `configs.json` configuration file and a sample `.env` file.
 
-After initialization, add your LLM API key to the `.env` file. Only Claude is supported at the moment:
+After initialization, configure your LLM settings in `configs.json`. The `llm` section supports two modes:
+
+**API Mode** (requires API key in `.env`):
 ```
 ANTHROPIC_API_KEY=your_api_key_here
+```
+
+**CLI Mode** (uses local CLI tools like `claude`):
+No API key required if using a locally installed CLI.
+
+Set `llm.default` to `"api"` or `"cli"` to choose which mode to use:
+
+```json
+{
+  "llm": {
+    "default": "cli",
+    "cli": {
+      "command_name": "claude",
+      "--model": "claude-sonnet-4-5-20250929",
+      "-t": 0.5,
+      "--max-tokens": 8192
+    },
+    "api": {
+      "provider": "claude",
+      "model": "claude-sonnet-4-5-20250929",
+      "temperature": 0.0,
+      "max_tokens": 8192
+    }
+  }
+}
 ```
 
 #### `crev pull`
