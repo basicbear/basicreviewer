@@ -1,9 +1,18 @@
 {
     "llm": {
-        "provider": "claude",
-        "model": "claude-sonnet-4-5-20250929",
-        "temperature": 0.0,
-        "max_tokens": 8192
+        "default": "api",
+        "cli": {
+            "command_name": "claude",
+            "--model": "claude-sonnet-4-5-20250929",
+            "-t": "0.0",
+            "--max-tokens": "8192"
+        },
+        "api": {
+            "provider": "claude",
+            "model": "claude-sonnet-4-5-20250929",
+            "temperature": 0.0,
+            "max_tokens": 8192
+        }
     },
     "repos": [
         {

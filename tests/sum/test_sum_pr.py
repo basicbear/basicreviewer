@@ -15,6 +15,13 @@ with _TEST_CONFIGS_PATH.open() as _f:
     BASE_CONFIGS_DATA = json.load(_f)
 
 
+def get_cli_mode_configs():
+    """Get a configs dict with CLI mode as default."""
+    configs = deepcopy(BASE_CONFIGS_DATA)
+    configs["llm"]["default"] = "cli"
+    return configs
+
+
 def setup_test_project(tmp_path):
     """Set up a test project with configs.json and prompts."""
     # Create configs.json from base data
@@ -362,3 +369,120 @@ def test_sum_pr_with_org_only(tmp_path):
 
             assert result.exit_code == 0
             assert "Summarizing PR #1" in result.output
+
+
+def test_sum_pr_with_cli_mode(tmp_path):
+    """Test that sum pr works with CLI mode LLM configuration."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project with CLI mode configs
+        configs = get_cli_mode_configs()
+        configs_file = Path("configs.json")
+        with configs_file.open("w") as f:
+            json.dump(configs, f)
+
+        # Create prompts directory
+        prompts_dir = Path("prompts")
+        prompts_dir.mkdir()
+        (prompts_dir / "sum.pr.txt").write_text("Test PR prompt")
+
+        # Create PR directory structure (input)
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
+        pr_dir.mkdir(parents=True)
+
+        # Create output directory
+        output_dir = Path("data") / "test-org" / "test-repo" / "1"
+        output_dir.mkdir(parents=True)
+
+        # Create sum directory with diff.txt
+        sum_dir = pr_dir / "sum"
+        sum_dir.mkdir()
+        (sum_dir / "diff.txt").write_text("diff content")
+
+        # Create code directory
+        code_dir = pr_dir / "code"
+        code_dir.mkdir()
+
+        # Mock subprocess.run for CLI mode
+        with patch("subprocess.run") as mock_subprocess:
+            # Configure subprocess mock for CLI LLM call
+            mock_result = MagicMock()
+            mock_result.stdout = "Test PR summary from CLI"
+            mock_result.returncode = 0
+            mock_subprocess.return_value = mock_result
+
+            result = runner.invoke(main, ["sum", "pr", "test-org", "test-repo", "1"])
+
+            assert result.exit_code == 0
+            assert "Summarizing PR #1" in result.output
+
+            # Verify subprocess.run was called (CLI mode)
+            assert mock_subprocess.call_count >= 1
+
+            # Verify the CLI command was called with expected arguments
+            first_call = mock_subprocess.call_args_list[0]
+            cmd_args = first_call[0][0]
+            assert cmd_args[0] == "claude"  # command_name from config
+            assert "-p" in cmd_args  # prompt flag
+
+            # Check that output file was created
+            output_file = output_dir / "sum.pr.1.ai.md"
+            assert output_file.exists()
+            assert output_file.read_text() == "Test PR summary from CLI"
+
+
+def test_sum_pr_cli_mode_uses_correct_flags(tmp_path):
+    """Test that CLI mode passes the correct flags from config."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project with CLI mode configs
+        configs = get_cli_mode_configs()
+        configs_file = Path("configs.json")
+        with configs_file.open("w") as f:
+            json.dump(configs, f)
+
+        # Create prompts directory
+        prompts_dir = Path("prompts")
+        prompts_dir.mkdir()
+        (prompts_dir / "sum.pr.txt").write_text("Test PR prompt")
+
+        # Create PR directory structure (input)
+        pr_dir = Path("pullrequests") / "test-org" / "test-repo" / "1"
+        pr_dir.mkdir(parents=True)
+
+        # Create output directory
+        output_dir = Path("data") / "test-org" / "test-repo" / "1"
+        output_dir.mkdir(parents=True)
+
+        # Create sum directory with diff.txt
+        sum_dir = pr_dir / "sum"
+        sum_dir.mkdir()
+        (sum_dir / "diff.txt").write_text("diff content")
+
+        # Create code directory
+        code_dir = pr_dir / "code"
+        code_dir.mkdir()
+
+        # Mock subprocess.run for CLI mode
+        with patch("subprocess.run") as mock_subprocess:
+            mock_result = MagicMock()
+            mock_result.stdout = "Test PR summary"
+            mock_result.returncode = 0
+            mock_subprocess.return_value = mock_result
+
+            result = runner.invoke(main, ["sum", "pr", "test-org", "test-repo", "1"])
+
+            assert result.exit_code == 0
+
+            # Verify CLI flags from config were passed
+            assert mock_subprocess.call_count >= 1
+            first_call = mock_subprocess.call_args_list[0]
+            cmd_args = first_call[0][0]
+
+            # Check that config flags are present
+            assert "--model" in cmd_args
+            assert "claude-sonnet-4-5-20250929" in cmd_args
+            assert "-t" in cmd_args
+            assert "--max-tokens" in cmd_args

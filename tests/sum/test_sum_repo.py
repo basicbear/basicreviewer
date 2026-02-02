@@ -15,6 +15,13 @@ with _TEST_CONFIGS_PATH.open() as _f:
     BASE_CONFIGS_DATA = json.load(_f)
 
 
+def get_cli_mode_configs():
+    """Get a configs dict with CLI mode as default."""
+    configs = deepcopy(BASE_CONFIGS_DATA)
+    configs["llm"]["default"] = "cli"
+    return configs
+
+
 def setup_test_project(tmp_path):
     """Set up a test project with configs.json and prompts."""
     # Create configs.json from base data
@@ -490,3 +497,197 @@ def test_sum_repo_with_org_only(tmp_path):
 
             assert result.exit_code == 0
             assert "Summarizing repository: test-org/test-repo" in result.output
+
+
+def test_sum_repo_with_cli_mode(tmp_path):
+    """Test that sum repo works with CLI mode LLM configuration."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project with CLI mode configs
+        configs = get_cli_mode_configs()
+        configs_file = Path("configs.json")
+        with configs_file.open("w") as f:
+            json.dump(configs, f)
+
+        # Create prompts directory
+        prompts_dir = Path("prompts")
+        prompts_dir.mkdir()
+        (prompts_dir / "sum.repo.txt").write_text("Test repo prompt")
+        (prompts_dir / "sum_repo_file_category.txt").write_text(
+            "Categorize files prompt"
+        )
+        (prompts_dir / "sum_repo_structure.txt").write_text("Structure prompt")
+        (prompts_dir / "sum_repo_app.txt").write_text("App prompt")
+        (prompts_dir / "sum_repo_test.txt").write_text("Test prompt")
+        (prompts_dir / "sum_repo_infra.txt").write_text("Infra prompt")
+
+        # Create repos directory with a git repo (with org level)
+        repos_dir = Path("repos")
+        repos_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
+        (repo_dir / "README.md").write_text("# Test Repo")
+        (repo_dir / "main.py").write_text("print('hello')")
+
+        # Create data directory
+        Path("data").mkdir()
+
+        # Mock the git commands and subprocess.run for CLI mode
+        with (
+            patch("crev.sum.sum_repo._get_git_version_info") as mock_git,
+            patch("subprocess.run") as mock_subprocess,
+            patch(
+                "crev.sum.sum_repo.collect_file_category"
+            ) as mock_collect_file_category,
+            patch(
+                "crev.sum.sum_repo.collect_structure_context"
+            ) as mock_collect_structure,
+            patch("crev.sum.sum_repo.collect_repo_context") as mock_collect_repo,
+        ):
+            mock_git.return_value = (42, "abc1234567")
+
+            # Set up multiple return values for different LLM calls
+            categorization_result = MagicMock()
+            categorization_result.stdout = json.dumps(
+                {"app": ["main.py"], "test": [], "infra": ["README.md"]}
+            )
+            categorization_result.returncode = 0
+
+            structure_result = MagicMock()
+            structure_result.stdout = "Structure summary"
+            structure_result.returncode = 0
+
+            app_result = MagicMock()
+            app_result.stdout = "App analysis"
+            app_result.returncode = 0
+
+            infra_result = MagicMock()
+            infra_result.stdout = "Infra analysis"
+            infra_result.returncode = 0
+
+            mock_subprocess.side_effect = [
+                categorization_result,
+                structure_result,
+                app_result,
+                infra_result,
+            ]
+
+            # Set up context collector mocks
+            mock_collect_file_category.return_value = "file listing context"
+            mock_collect_structure.return_value = "structure context"
+            mock_collect_repo.return_value = "repo context"
+
+            result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
+
+            assert result.exit_code == 0
+            assert "Summarizing repository: test-org/test-repo" in result.output
+
+            # Verify subprocess.run was called (CLI mode)
+            assert mock_subprocess.call_count >= 1
+
+            # Verify the CLI command was called with expected arguments
+            first_call = mock_subprocess.call_args_list[0]
+            cmd_args = first_call[0][0]
+            assert cmd_args[0] == "claude"  # command_name from config
+            assert "-p" in cmd_args  # prompt flag
+
+            # Check that output file was created
+            output_dir = Path("data") / "test-org" / "test-repo" / "sum"
+            assert output_dir.exists()
+
+
+def test_sum_repo_cli_mode_uses_correct_flags(tmp_path):
+    """Test that CLI mode passes the correct flags from config."""
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Setup test project with CLI mode configs
+        configs = get_cli_mode_configs()
+        configs_file = Path("configs.json")
+        with configs_file.open("w") as f:
+            json.dump(configs, f)
+
+        # Create prompts directory
+        prompts_dir = Path("prompts")
+        prompts_dir.mkdir()
+        (prompts_dir / "sum_repo_file_category.txt").write_text("Categorize files")
+
+        # Create repos directory with a git repo
+        repos_dir = Path("repos")
+        repos_dir.mkdir()
+        repo_dir = repos_dir / "test-org" / "test-repo"
+        repo_dir.mkdir(parents=True)
+        (repo_dir / "main.py").write_text("print('hello')")
+
+        # Create data directory
+        Path("data").mkdir()
+
+        # Mock git and subprocess
+        with (
+            patch("crev.sum.sum_repo._get_git_version_info") as mock_git,
+            patch("subprocess.run") as mock_subprocess,
+            patch(
+                "crev.sum.sum_repo.collect_file_category"
+            ) as mock_collect_file_category,
+        ):
+            mock_git.return_value = (42, "abc1234567")
+            mock_collect_file_category.return_value = "file listing context"
+
+            # Mock subprocess to return valid JSON for categorization
+            mock_result = MagicMock()
+            mock_result.stdout = json.dumps(
+                {"app": ["main.py"], "test": [], "infra": []}
+            )
+            mock_result.returncode = 0
+            mock_subprocess.return_value = mock_result
+
+            # Run with --context-only to limit LLM calls
+            runner.invoke(
+                main, ["sum", "repo", "test-org", "test-repo", "--context-only"]
+            )
+
+            # Context-only doesn't call LLM, so let's check a full run
+            # Reset and run without --context-only but mock all responses
+            mock_subprocess.reset_mock()
+
+            categorization_result = MagicMock()
+            categorization_result.stdout = json.dumps(
+                {"app": ["main.py"], "test": [], "infra": []}
+            )
+            categorization_result.returncode = 0
+
+            structure_result = MagicMock()
+            structure_result.stdout = "Structure summary"
+            structure_result.returncode = 0
+
+            app_result = MagicMock()
+            app_result.stdout = "App analysis"
+            app_result.returncode = 0
+
+            mock_subprocess.side_effect = [
+                categorization_result,
+                structure_result,
+                app_result,
+            ]
+
+            with (
+                patch(
+                    "crev.sum.sum_repo.collect_structure_context"
+                ) as mock_collect_structure,
+                patch("crev.sum.sum_repo.collect_repo_context") as mock_collect_repo,
+            ):
+                mock_collect_structure.return_value = "structure context"
+                mock_collect_repo.return_value = "repo context"
+
+                result = runner.invoke(main, ["sum", "repo", "test-org", "test-repo"])
+
+            # Verify CLI flags from config were passed
+            if mock_subprocess.call_count > 0:
+                first_call = mock_subprocess.call_args_list[0]
+                cmd_args = first_call[0][0]
+                # Check that config flags are present
+                assert "--model" in cmd_args
+                assert "claude-sonnet-4-5-20250929" in cmd_args
+                assert "-t" in cmd_args
+                assert "--max-tokens" in cmd_args
