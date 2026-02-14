@@ -1,7 +1,6 @@
 """Edge case tests for the pull command."""
 
 import json
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -18,8 +17,7 @@ def test_pull_handles_empty_repos_list(tmp_path):
         with open("configs.json", "w") as f:
             json.dump(configs, f)
 
-        with patch("subprocess.run"):
-            result = runner.invoke(main, ["pull"])
+        result = runner.invoke(main, ["pull"])
 
         assert result.exit_code == 0
         assert "Done." in result.output
@@ -35,8 +33,7 @@ def test_pull_handles_missing_repos_key(tmp_path):
         with open("configs.json", "w") as f:
             json.dump(configs, f)
 
-        with patch("subprocess.run"):
-            result = runner.invoke(main, ["pull"])
+        result = runner.invoke(main, ["pull"])
 
         assert result.exit_code == 0
         assert "Done." in result.output
