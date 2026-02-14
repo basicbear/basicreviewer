@@ -1,10 +1,10 @@
 """Pull command for crev CLI."""
 
 import json
-import subprocess
 from pathlib import Path
 
 import click
+import pygit2
 
 
 def getRepo(repo: dict, repos_dir: Path) -> None:
@@ -28,10 +28,23 @@ def getRepo(repo: dict, repos_dir: Path) -> None:
 
     if repo_path.exists():
         click.echo(f"Pulling updates for {name}...")
-        subprocess.run(["git", "pull"], cwd=repo_path, check=True)
+        repository = pygit2.Repository(str(repo_path))
+        remote = repository.remotes["origin"]
+        remote.fetch()
+        # Fast-forward the current branch to the remote tracking branch
+        branch_name = repository.head.shorthand
+        remote_ref = repository.references.get(
+            f"refs/remotes/origin/{branch_name}"
+        )
+        if remote_ref is not None:
+            repository.checkout_tree(repository.get(remote_ref.target))
+            ref = repository.references.get(f"refs/heads/{branch_name}")
+            if ref is not None:
+                ref.set_target(remote_ref.target)
+            repository.head.set_target(remote_ref.target)
     else:
         click.echo(f"Cloning {name}...")
-        subprocess.run(["git", "clone", url, str(repo_path)], check=True)
+        pygit2.clone_repository(url, str(repo_path))
 
 
 def getPullRequest(repo: dict, repos_dir: Path) -> None:
@@ -54,16 +67,10 @@ def getPullRequest(repo: dict, repos_dir: Path) -> None:
         click.echo(f"Skipping PRs for {name} (repo not found)", err=True)
         return
 
-    # Get list of existing branches
-    result = subprocess.run(
-        ["git", "branch", "--list"],
-        cwd=repo_path,
-        capture_output=True,
-        text=True,
-    )
-    existing_branches = {
-        branch.strip().lstrip("* ") for branch in result.stdout.splitlines()
-    }
+    repository = pygit2.Repository(str(repo_path))
+    existing_branches = set(repository.branches.local)
+
+    remote = repository.remotes["origin"]
 
     for pr_number in pull_requests:
         if not isinstance(pr_number, int):
@@ -78,12 +85,10 @@ def getPullRequest(repo: dict, repos_dir: Path) -> None:
 
         click.echo(f"Fetching PR #{pr_number} for {name} into {local_branch}...")
         try:
-            subprocess.run(
-                ["git", "fetch", "origin", f"pull/{pr_number}/head:{local_branch}"],
-                cwd=repo_path,
-                check=True,
+            remote.fetch(
+                [f"+refs/pull/{pr_number}/head:refs/heads/{local_branch}"]
             )
-        except subprocess.CalledProcessError as e:
+        except pygit2.GitError as e:
             click.echo(f"Failed to fetch PR #{pr_number}: {e}", err=True)
 
 
